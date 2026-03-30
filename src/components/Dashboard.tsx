@@ -1,4 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import {
+  Wallet,
+  ArrowUpCircle,
+  ArrowDownCircle,
+  Clock,
+  TrendingUp,
+  Lightbulb,
+  ChevronRight,
+  ShieldCheck
+} from 'lucide-react';
 
 interface Transaction {
   id: number;
@@ -9,17 +19,11 @@ interface Transaction {
 }
 
 const Dashboard: React.FC = () => {
-  // Mock data for calculation
+  // Mock data representing a more dynamic state
   const income = 5000;
   const fixedDues = 1500;
   const goalAllocations = 1000;
   const safetyBuffer = 500;
-  const expenses = 1200;
-
-  // S = I - (F + G + B)
-  const safeToSpend = income - (fixedDues + goalAllocations + safetyBuffer);
-  const duesLeft = fixedDues - 1200; // Mocked remaining dues
-  const netSaving = income - expenses - fixedDues;
 
   const recentTransactions: Transaction[] = [
     { id: 1, description: 'Grocery Store', amount: -85.50, date: '2023-10-25', category: 'Food' },
@@ -28,6 +32,16 @@ const Dashboard: React.FC = () => {
     { id: 4, description: 'Internet Bill', amount: -60.00, date: '2023-10-05', category: 'Utilities' },
     { id: 5, description: 'Coffee Shop', amount: -5.75, date: '2023-10-26', category: 'Food' },
   ];
+
+  // Derive metrics from data
+  const expenses = useMemo(() =>
+    Math.abs(recentTransactions.filter(t => t.amount < 0 && t.category !== 'Housing').reduce((sum, t) => sum + t.amount, 0)),
+  [recentTransactions]);
+
+  // S = I - (F + G + B)
+  const safeToSpend = income - (fixedDues + goalAllocations + safetyBuffer);
+  const duesLeft = fixedDues - 1200; // Salary covers rent already in mock
+  const netSaving = income - expenses - fixedDues;
 
   const tips = [
     "50/30/20 Rule: Allocate 50% to needs, 30% to wants, and 20% to savings.",
@@ -44,113 +58,138 @@ const Dashboard: React.FC = () => {
       setCurrentTipIndex((prev) => (prev + 1) % tips.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [tips.length]);
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6 font-sans text-slate-800">
+    <div className="p-6">
       <div className="max-w-6xl mx-auto space-y-8">
 
-        {/* Top Section: Safe to Spend (Priority KPI) */}
-        <section className="bg-gradient-to-br from-blue-600 to-blue-500 rounded-3xl p-8 text-white shadow-xl shadow-blue-200/50">
-          <header>
-            <h2 className="text-blue-100 text-sm font-semibold uppercase tracking-wider">Safe to Spend</h2>
-            <div className="flex items-baseline gap-2 mt-2">
-              <span className="text-5xl font-bold">${safeToSpend.toLocaleString()}</span>
-              <span className="text-blue-200">remaining this month</span>
+        {/* Top Section: Safe to Spend (Priority KPI) - Inverted Pyramid Top */}
+        <section className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-8 text-white shadow-xl shadow-blue-200/50 relative overflow-hidden group">
+          <div className="absolute -right-12 -top-12 w-64 h-64 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-700"></div>
+          <header className="relative z-10">
+            <div className="flex items-center gap-2 mb-1">
+              <ShieldCheck size={16} className="text-blue-200" />
+              <h2 className="text-blue-100 text-xs font-bold uppercase tracking-widest">Safe to Spend</h2>
+            </div>
+            <div className="flex items-baseline gap-3 mt-2">
+              <span className="text-6xl font-black tracking-tighter">${safeToSpend.toLocaleString()}</span>
+              <span className="text-blue-100/80 font-medium italic text-lg">available now</span>
             </div>
           </header>
-          <div className="mt-6 flex flex-wrap gap-4 text-sm text-blue-100">
-            <div className="bg-white/10 px-3 py-1 rounded-full flex gap-2">
-              <span className="opacity-70">Income:</span>
-              <span className="font-medium">${income.toLocaleString()}</span>
+          <div className="mt-8 flex flex-wrap gap-3 relative z-10">
+            <div className="bg-white/15 backdrop-blur-md px-4 py-2 rounded-2xl flex items-center gap-2 border border-white/10">
+              <span className="text-blue-200 text-xs uppercase font-bold">Income:</span>
+              <span className="font-bold text-sm">${income.toLocaleString()}</span>
             </div>
-            <div className="bg-white/10 px-3 py-1 rounded-full flex gap-2">
-              <span className="opacity-70">Buffer:</span>
-              <span className="font-medium">-${safetyBuffer.toLocaleString()}</span>
+            <div className="bg-white/15 backdrop-blur-md px-4 py-2 rounded-2xl flex items-center gap-2 border border-white/10">
+              <span className="text-blue-200 text-xs uppercase font-bold">Buffer:</span>
+              <span className="font-bold text-sm">-${safetyBuffer.toLocaleString()}</span>
             </div>
           </div>
         </section>
 
-        {/* Middle Section: Summary Cards */}
+        {/* Middle Section: Summary Cards - Inverted Pyramid Middle */}
         <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
-            <p className="text-slate-500 text-sm font-medium">Monthly Income</p>
-            <p className="text-2xl font-bold text-emerald-600 mt-1">${income.toLocaleString()}</p>
-          </div>
-          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
-            <p className="text-slate-500 text-sm font-medium">Expenses</p>
-            <p className="text-2xl font-bold text-slate-800 mt-1">${expenses.toLocaleString()}</p>
-          </div>
-          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
-            <p className="text-slate-500 text-sm font-medium">Dues Left</p>
-            <p className="text-2xl font-bold text-blue-600 mt-1">${duesLeft.toLocaleString()}</p>
-          </div>
-          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
-            <p className="text-slate-500 text-sm font-medium">Net Saving</p>
-            <p className={`text-2xl font-bold mt-1 ${netSaving >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-              ${netSaving.toLocaleString()}
-            </p>
-          </div>
+          {[
+            { label: 'Monthly Income', value: income, color: 'text-emerald-600', icon: ArrowUpCircle, bg: 'bg-emerald-50' },
+            { label: 'Expenses', value: expenses, color: 'text-slate-800', icon: ArrowDownCircle, bg: 'bg-slate-50' },
+            { label: 'Dues Left', value: duesLeft, color: 'text-blue-600', icon: Clock, bg: 'bg-blue-50' },
+            { label: 'Net Saving', value: netSaving, color: netSaving >= 0 ? 'text-emerald-600' : 'text-rose-600', icon: TrendingUp, bg: netSaving >= 0 ? 'bg-emerald-50' : 'bg-rose-50' }
+          ].map((card, idx) => (
+            <div key={idx} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+              <div className="flex justify-between items-start mb-4">
+                <div className={`${card.bg} p-2.5 rounded-2xl`}>
+                  <card.icon size={20} className={card.color} />
+                </div>
+              </div>
+              <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">{card.label}</p>
+              <p className={`text-2xl font-black mt-1 ${card.color}`}>${card.value.toLocaleString()}</p>
+            </div>
+          ))}
         </section>
 
-        {/* Bottom Section: Activities & Tips */}
+        {/* Bottom Section: Activities & Tips - Inverted Pyramid Base */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Recent Activity */}
-          <section className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-            <h3 className="text-lg font-bold mb-4">Recent Activity</h3>
-            <div className="divide-y divide-slate-50">
+          <section className="lg:col-span-2 bg-white rounded-3xl border border-slate-100 shadow-sm p-8">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+                <Wallet size={20} className="text-blue-500" />
+                Recent Activity
+              </h3>
+              <button className="text-xs font-bold text-blue-600 hover:text-blue-700 uppercase tracking-widest bg-blue-50 px-3 py-1.5 rounded-xl transition-colors">
+                View All
+              </button>
+            </div>
+            <div className="space-y-1">
               {recentTransactions.map((tx) => (
-                <div key={tx.id} className="py-4 flex justify-between items-center">
-                  <div>
-                    <p className="font-semibold text-slate-700">{tx.description}</p>
-                    <p className="text-xs text-slate-400">{tx.date} • {tx.category}</p>
+                <div key={tx.id} className="group py-4 flex justify-between items-center border-b border-slate-50 last:border-0 hover:bg-slate-50/50 px-2 -mx-2 rounded-2xl transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-lg ${
+                      tx.amount > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-600'
+                    }`}>
+                      {tx.description[0]}
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-800 group-hover:text-blue-600 transition-colors">{tx.description}</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{tx.date} • {tx.category}</p>
+                    </div>
                   </div>
-                  <span className={`font-bold ${tx.amount > 0 ? 'text-emerald-600' : 'text-slate-700'}`}>
+                  <span className={`font-black text-lg ${tx.amount > 0 ? 'text-emerald-600' : 'text-slate-800'}`}>
                     {tx.amount > 0 ? '+' : ''}{tx.amount.toFixed(2)}
                   </span>
                 </div>
               ))}
             </div>
-            <button className="w-full mt-4 text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors">
-              View all transactions
-            </button>
           </section>
 
           {/* Tips Section */}
           <aside className="space-y-6">
-            <section className="bg-emerald-50 border border-emerald-100 rounded-2xl p-6">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-emerald-600 text-xl">💡</span>
-                <h3 className="text-emerald-800 font-bold">Smart Tips</h3>
+            <section className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100 rounded-3xl p-8 relative overflow-hidden">
+              <div className="absolute -right-6 -bottom-6 text-emerald-100/50 rotate-12">
+                <Lightbulb size={120} />
               </div>
-              <div className="min-h-[80px] flex items-center">
-                <p className="text-emerald-700 text-sm italic leading-relaxed animate-in fade-in duration-700">
-                  "{tips[currentTipIndex]}"
-                </p>
+              <div className="relative z-10">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="bg-emerald-500 p-2 rounded-xl text-white">
+                    <Lightbulb size={18} />
+                  </div>
+                  <h3 className="text-emerald-900 font-black tracking-tight">Smart Tips</h3>
+                </div>
+                <div className="min-h-[100px] flex items-center">
+                  <p className="text-emerald-800 font-medium italic leading-relaxed text-sm">
+                    "{tips[currentTipIndex]}"
+                  </p>
+                </div>
+                <div className="flex gap-1.5 mt-4">
+                  {tips.map((_, i) => (
+                    <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i === currentTipIndex ? 'w-6 bg-emerald-500' : 'w-1.5 bg-emerald-200'}`}></div>
+                  ))}
+                </div>
               </div>
             </section>
 
-            <section className="bg-blue-50 border border-blue-100 rounded-2xl p-6">
-              <h3 className="text-blue-800 font-bold mb-2 text-sm">50/30/20 Status</h3>
-              <div className="space-y-3">
-                <div>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-blue-600 font-medium">Needs (50%)</span>
-                    <span className="text-blue-800 font-bold">45%</span>
+            <section className="bg-white border border-slate-100 rounded-3xl p-8 shadow-sm">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-slate-800 font-black text-sm uppercase tracking-widest">50/30/20 Status</h3>
+                <ChevronRight size={16} className="text-slate-300" />
+              </div>
+              <div className="space-y-5">
+                {[
+                  { label: 'Needs (50%)', current: 45, color: 'bg-blue-500', barBg: 'bg-blue-100', text: 'text-blue-600' },
+                  { label: 'Savings (20%)', current: 20, color: 'bg-emerald-500', barBg: 'bg-emerald-100', text: 'text-emerald-600' }
+                ].map((stat, i) => (
+                  <div key={i}>
+                    <div className="flex justify-between text-xs mb-2">
+                      <span className={`${stat.text} font-black uppercase tracking-widest`}>{stat.label}</span>
+                      <span className="text-slate-800 font-black">{stat.current}%</span>
+                    </div>
+                    <div className={`w-full ${stat.barBg} rounded-full h-2.5 overflow-hidden`}>
+                      <div className={`${stat.color} h-full rounded-full transition-all duration-1000`} style={{ width: `${stat.current}%` }}></div>
+                    </div>
                   </div>
-                  <div className="w-full bg-blue-200 rounded-full h-1.5">
-                    <div className="bg-blue-600 h-1.5 rounded-full" style={{ width: '45%' }}></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-emerald-600 font-medium">Savings (20%)</span>
-                    <span className="text-emerald-800 font-bold">20%</span>
-                  </div>
-                  <div className="w-full bg-emerald-200 rounded-full h-1.5">
-                    <div className="bg-emerald-600 h-1.5 rounded-full" style={{ width: '20%' }}></div>
-                  </div>
-                </div>
+                ))}
               </div>
             </section>
           </aside>
