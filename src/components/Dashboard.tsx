@@ -59,7 +59,7 @@ const Dashboard: React.FC = () => {
   const safetyBuffer = 500;
 
   const expenses = useMemo(() =>
-    Math.abs(mockTransactions.filter(t => t.amount < 0 && t.category !== 'Housing').reduce((sum, t) => sum + t.amount, 0)),
+    Math.abs(mockTransactions.filter(t => t.amount < 0).reduce((sum, t) => sum + t.amount, 0)),
   []);
 
   // S = I - (F + G + B)
@@ -97,10 +97,10 @@ const Dashboard: React.FC = () => {
   const glassStyle = "bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl border border-white/20 dark:border-slate-800/50 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] rounded-[20px]";
 
   return (
-    <div className="p-6 min-h-screen bg-slate-50/50 dark:bg-slate-950/50 transition-colors duration-500">
+    <div className="p-4 md:p-6 min-h-screen bg-slate-50/50 dark:bg-slate-950/50 transition-colors duration-500">
       <motion.div
         layout
-        className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 grid-rows-auto gap-6"
+        className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 grid-rows-auto gap-4 md:gap-6"
       >
 
         {/* Safe to Spend - Large Hero Card (Inverted Pyramid Top) */}
@@ -109,7 +109,7 @@ const Dashboard: React.FC = () => {
           variants={cardVariants}
           initial="hidden"
           animate="visible"
-          className={`col-span-1 md:col-span-4 lg:col-span-4 row-span-2 relative overflow-hidden group bg-gradient-to-br from-blue-600/90 to-indigo-700/90 rounded-[20px] p-8 text-white shadow-2xl shadow-blue-500/20 border border-white/20`}
+          className={`col-span-1 md:col-span-4 lg:col-span-4 row-span-2 relative overflow-hidden group bg-gradient-to-br from-blue-600/90 to-indigo-700/90 rounded-[20px] p-6 md:p-8 text-white shadow-2xl shadow-blue-500/20 border border-white/20`}
         >
           {/* Shimmer Effect */}
           {!shouldReduceMotion && (
@@ -137,25 +137,25 @@ const Dashboard: React.FC = () => {
                 <h2 className="text-blue-100 text-xs font-black uppercase tracking-widest">Safe to Spend</h2>
               </div>
               <div className="flex flex-col mt-4">
-                <div className="flex items-baseline gap-3">
-                  <span className="text-7xl font-black tracking-tighter drop-shadow-sm">
+                <div className="flex flex-wrap items-baseline gap-2 md:gap-3">
+                  <span className="text-5xl md:text-7xl font-black tracking-tighter drop-shadow-sm">
                     $<CountUp value={safeToSpend} />
                   </span>
-                  <span className="text-blue-100/80 font-bold italic text-lg mb-2">available now</span>
+                  <span className="text-blue-100/80 font-bold italic text-sm md:text-lg mb-1 md:mb-2 whitespace-nowrap">available now</span>
                 </div>
               </div>
             </div>
 
-            <div className="mt-12 flex flex-wrap gap-4">
+            <div className="mt-8 md:mt-12 flex flex-wrap gap-2 md:gap-4">
               {[
                 { label: 'Income', val: income, sign: '+' },
                 { label: 'Dues', val: fixedDuesTotal, sign: '-' },
                 { label: 'Goals', val: goalAllocations, sign: '-' },
                 { label: 'Buffer', val: safetyBuffer, sign: '-' }
               ].map((item, i) => (
-                <div key={i} className="bg-white/10 backdrop-blur-xl px-5 py-3 rounded-2xl flex flex-col gap-1 border border-white/10 hover:bg-white/20 transition-colors">
-                  <span className="text-blue-200 text-[10px] uppercase font-black tracking-widest">{item.label}</span>
-                  <span className="font-black text-lg">{item.sign}${item.val.toLocaleString()}</span>
+                <div key={i} className="flex-1 min-w-[100px] bg-white/10 backdrop-blur-xl px-3 md:px-5 py-2 md:py-3 rounded-2xl flex flex-col gap-0 md:gap-1 border border-white/10 hover:bg-white/20 transition-colors">
+                  <span className="text-blue-200 text-[8px] md:text-[10px] uppercase font-black tracking-widest">{item.label}</span>
+                  <span className="font-black text-sm md:text-lg">{item.sign}${item.val.toLocaleString()}</span>
                 </div>
               ))}
             </div>
@@ -196,10 +196,10 @@ const Dashboard: React.FC = () => {
           variants={cardVariants}
           initial="hidden"
           animate="visible"
-          className={`col-span-1 md:col-span-4 lg:col-span-4 p-8 relative overflow-hidden ${glassStyle}`}
+          className={`col-span-1 md:col-span-4 lg:col-span-4 p-6 md:p-8 relative overflow-hidden ${glassStyle}`}
         >
-          <div className="flex justify-between items-center mb-8">
-            <h3 className="text-xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
+          <div className="flex justify-between items-center mb-6 md:mb-8">
+            <h3 className="text-lg md:text-xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
               <Wallet size={20} className="text-blue-500" />
               Recent Activity
             </h3>
@@ -239,7 +239,7 @@ const Dashboard: React.FC = () => {
             variants={cardVariants}
             initial="hidden"
             animate="visible"
-            className={`p-8 relative overflow-hidden bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-[20px] shadow-xl shadow-emerald-500/10`}
+            className={`p-6 md:p-8 relative overflow-hidden bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-[20px] shadow-xl shadow-emerald-500/10`}
           >
             <div className="absolute -right-6 -bottom-6 text-white/10 rotate-12">
               <Lightbulb size={160} />
@@ -282,9 +282,9 @@ const Dashboard: React.FC = () => {
             variants={cardVariants}
             initial="hidden"
             animate="visible"
-            className={`p-8 ${glassStyle}`}
+            className={`p-6 md:p-8 ${glassStyle}`}
           >
-            <div className="flex justify-between items-center mb-8">
+            <div className="flex justify-between items-center mb-6 md:mb-8">
               <h3 className="text-slate-800 dark:text-white font-black text-xs uppercase tracking-widest">Efficiency Status</h3>
             </div>
             <div className="space-y-6">

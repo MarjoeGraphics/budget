@@ -14,6 +14,8 @@ import {
 import { mockDues, mockIncomes, initialBalance } from '../data/dues';
 
 const MonthlyDues: React.FC = () => {
+  const currentMonthName = new Intl.DateTimeFormat('en-US', { month: 'long' }).format(new Date());
+
   // Cashflow logic: Calculate daily balance projections
   const dailyProjections = useMemo(() => {
     const projections = [];
@@ -58,29 +60,29 @@ const MonthlyDues: React.FC = () => {
   const essentialCoveragePercent = (fixedDuesTotal / monthlyIncome) * 100;
 
   return (
-    <div className="p-6">
-      <div className="max-w-6xl mx-auto space-y-8">
+    <div className="p-4 md:p-6">
+      <div className="max-w-6xl mx-auto space-y-6 md:space-y-8">
 
         {/* Page Header */}
-        <header className="flex justify-between items-end mb-10">
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-8 md:mb-10">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <Calendar size={18} className="text-blue-600" />
               <h2 className="text-blue-600 text-xs font-black uppercase tracking-widest">Financial Planning</h2>
             </div>
-            <h1 className="text-4xl font-black text-slate-900 tracking-tight">Monthly Dues</h1>
-            <p className="text-slate-500 mt-2 font-medium">Manage recurring obligations and predict crunch periods.</p>
+            <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">{currentMonthName} Dues</h1>
+            <p className="text-slate-500 mt-2 font-medium text-sm md:text-base">Manage recurring obligations and predict crunch periods.</p>
           </div>
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl font-black text-sm transition-all shadow-lg shadow-blue-200/50 flex items-center gap-2 hover:-translate-y-0.5 uppercase tracking-widest">
+          <button className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 md:py-3 rounded-2xl font-black text-sm transition-all shadow-lg shadow-blue-200/50 flex items-center justify-center gap-2 hover:-translate-y-0.5 uppercase tracking-widest">
             <PlusCircle size={18} />
             Add New Due
           </button>
         </header>
 
         {/* Cashflow Calendar / Projections */}
-        <section className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8 relative overflow-hidden">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+        <section className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 md:p-8 relative overflow-hidden">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
+            <h2 className="text-lg md:text-xl font-black text-slate-800 tracking-tight flex items-center gap-2">
               <span className="bg-blue-50 p-2 rounded-xl text-blue-600">🗓️</span>
               Payday Cashflow Calendar
             </h2>
@@ -96,11 +98,11 @@ const MonthlyDues: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-10 gap-4">
+          <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-10 gap-2 md:gap-4">
             {dailyProjections.map((proj) => (
               <div
                 key={proj.day}
-                className={`group p-4 rounded-2xl border-2 transition-all duration-300 relative ${
+                className={`group p-3 md:p-4 rounded-xl md:rounded-2xl border-2 transition-all duration-300 relative ${
                   proj.isCrunchDay
                     ? 'bg-rose-50 border-rose-200 shadow-sm ring-1 ring-rose-300/10'
                     : 'bg-white border-slate-50 hover:border-blue-100 hover:shadow-xl hover:shadow-slate-100 hover:-translate-y-1'
@@ -109,7 +111,7 @@ const MonthlyDues: React.FC = () => {
                 <span className={`text-[10px] font-black uppercase tracking-tighter ${proj.isCrunchDay ? 'text-rose-500' : 'text-slate-400 group-hover:text-blue-400 transition-colors'}`}>
                   Day {proj.day}
                 </span>
-                <span className={`block text-lg font-black mt-2 leading-none ${proj.isCrunchDay ? 'text-rose-700' : 'text-slate-800'}`}>
+                <span className={`block text-base md:text-lg font-black mt-1 md:mt-2 leading-none ${proj.isCrunchDay ? 'text-rose-700' : 'text-slate-800'}`}>
                   ${Math.round(proj.balance)}
                 </span>
                 <div className="flex gap-1 mt-3 h-4">
@@ -129,18 +131,18 @@ const MonthlyDues: React.FC = () => {
           </div>
 
           {crunchPeriod && (
-            <div className="mt-10 p-6 bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-amber-400 rounded-2xl flex items-start gap-4 shadow-sm shadow-amber-100 animate-in fade-in slide-in-from-top-4 duration-700">
+            <div className="mt-8 md:mt-10 p-5 md:p-6 bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-amber-400 rounded-2xl flex flex-col md:flex-row items-start gap-4 shadow-sm shadow-amber-100 animate-in fade-in slide-in-from-top-4 duration-700">
               <div className="bg-amber-400 p-2.5 rounded-xl text-white shadow-lg shadow-amber-200/50">
                 <ShieldAlert size={20} />
               </div>
-              <div>
+              <div className="flex-1">
                 <p className="text-amber-900 font-black text-lg tracking-tight">Crunch Period Ahead</p>
-                <p className="text-amber-800/80 text-sm font-medium mt-1 leading-relaxed max-w-2xl">
+                <p className="text-amber-800/80 text-xs md:text-sm font-medium mt-1 leading-relaxed max-w-2xl">
                   Balance predicted to dip below $500 from Day {crunchPeriod.start} to Day {crunchPeriod.end}.
                   <span className="font-black text-amber-900 ml-1 underline decoration-amber-400 decoration-2">Avoid discretionary spending during this window.</span>
                 </p>
               </div>
-              <button className="ml-auto text-amber-600 font-black text-xs uppercase tracking-widest bg-white px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition-all">
+              <button className="w-full md:w-auto text-amber-600 font-black text-[10px] md:text-xs uppercase tracking-widest bg-white px-4 py-3 md:py-2 rounded-xl shadow-sm hover:shadow-md transition-all">
                 Plan Fix
               </button>
             </div>
@@ -150,8 +152,8 @@ const MonthlyDues: React.FC = () => {
         {/* Dues Management List */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-12">
           <section className="lg:col-span-2 bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-            <div className="px-8 py-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/20">
-              <h2 className="text-xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+            <div className="px-6 md:px-8 py-5 md:py-6 border-b border-slate-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-2 bg-slate-50/20">
+              <h2 className="text-lg md:text-xl font-black text-slate-800 tracking-tight flex items-center gap-2">
                 <Search size={20} className="text-blue-500" />
                 Recurring Dues
               </h2>
@@ -161,21 +163,21 @@ const MonthlyDues: React.FC = () => {
             </div>
             <div className="divide-y divide-slate-50 px-2">
               {mockDues.map((due) => (
-                <div key={due.id} className="p-6 flex items-center justify-between hover:bg-slate-50/50 transition-all rounded-2xl group cursor-pointer">
-                  <div className="flex items-center gap-6">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg transition-all duration-300 ${
+                <div key={due.id} className="p-4 md:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 hover:bg-slate-50/50 transition-all rounded-2xl group cursor-pointer">
+                  <div className="flex items-center gap-4 md:gap-6 w-full md:w-auto">
+                    <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl flex items-center justify-center font-black text-base md:text-lg transition-all duration-300 ${
                       due.isPaid ? 'bg-emerald-50 text-emerald-600 shadow-sm shadow-emerald-100 group-hover:scale-110' : 'bg-blue-50 text-blue-600 shadow-sm shadow-blue-100 group-hover:scale-110'
                     }`}>
                       {due.dayOfMonth}
                     </div>
                     <div>
-                      <p className="font-black text-slate-800 text-lg tracking-tight group-hover:text-blue-600 transition-colors">{due.name}</p>
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-tighter">{due.category}</p>
+                      <p className="font-black text-slate-800 text-base md:text-lg tracking-tight group-hover:text-blue-600 transition-colors">{due.name}</p>
+                      <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-tighter">{due.category}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-8 text-right">
-                    <div>
-                      <p className="font-black text-slate-800 text-lg">${due.amount}</p>
+                  <div className="flex items-center justify-between md:justify-end w-full md:w-auto gap-4 md:gap-8">
+                    <div className="text-left md:text-right">
+                      <p className="font-black text-slate-800 text-base md:text-lg">${due.amount}</p>
                       <div className="flex items-center gap-1.5 justify-end">
                         {due.isPaid ? <CheckCircle2 size={12} className="text-emerald-500" /> : <Clock size={12} className="text-blue-500" />}
                         <p className={`text-[10px] font-black uppercase tracking-widest ${
@@ -202,11 +204,11 @@ const MonthlyDues: React.FC = () => {
 
           {/* Auto-Detection & Manual Flagging */}
           <aside className="space-y-6">
-            <section className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-8 text-white shadow-xl shadow-blue-200/50 relative overflow-hidden group">
+            <section className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-6 md:p-8 text-white shadow-xl shadow-blue-200/50 relative overflow-hidden group">
               <div className="absolute -right-6 -bottom-6 text-white/10 group-hover:rotate-12 transition-transform duration-500">
                 <TrendingUp size={120} />
               </div>
-              <h3 className="text-lg font-black mb-2 tracking-tight flex items-center gap-2">
+              <h3 className="text-base md:text-lg font-black mb-2 tracking-tight flex items-center gap-2">
                 <Search size={20} className="text-blue-200" />
                 Smart Detection
               </h3>
@@ -235,7 +237,7 @@ const MonthlyDues: React.FC = () => {
               </button>
             </section>
 
-            <section className="bg-emerald-50 border border-emerald-100 rounded-3xl p-8 shadow-sm">
+            <section className="bg-emerald-50 border border-emerald-100 rounded-3xl p-6 md:p-8 shadow-sm">
               <h3 className="text-emerald-900 font-black text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
                 <ShieldCheck size={18} className="text-emerald-500" />
                 Budget Safety

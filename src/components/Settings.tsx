@@ -124,15 +124,15 @@ const Settings: React.FC = () => {
   };
 
   return (
-    <div className="p-6">
-      <div className="max-w-4xl mx-auto space-y-8">
+    <div className="p-4 md:p-6">
+      <div className="max-w-4xl mx-auto space-y-6 md:space-y-8">
         {/* Header */}
         <header>
           <div className="flex items-center gap-2 mb-1">
             <SettingsIcon size={18} className="text-slate-600 dark:text-slate-400" />
             <h2 className="text-slate-600 dark:text-slate-400 text-xs font-black uppercase tracking-widest">User Preferences</h2>
           </div>
-          <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">App Settings</h1>
+          <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight">App Settings</h1>
         </header>
 
         {/* Feedback Alert */}
@@ -145,9 +145,9 @@ const Settings: React.FC = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
           {/* Appearance Section */}
-          <section className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm p-8 space-y-6">
+          <section className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm p-6 md:p-8 space-y-6">
             <div className="flex items-center gap-2 mb-2">
               <Sun size={20} className="text-amber-500" />
               <h3 className="text-xl font-black text-slate-800 dark:text-white">Appearance</h3>
@@ -174,7 +174,7 @@ const Settings: React.FC = () => {
           </section>
 
           {/* Help/Guide Section */}
-          <section className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm p-8 space-y-6">
+          <section className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm p-6 md:p-8 space-y-6">
             <div className="flex items-center gap-2 mb-2">
               <HelpCircle size={20} className="text-indigo-500" />
               <h3 className="text-xl font-black text-slate-800 dark:text-white">Help & Guide</h3>
@@ -197,8 +197,8 @@ const Settings: React.FC = () => {
           </section>
 
           {/* Data Management Section */}
-          <section className="md:col-span-2 bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm p-8 space-y-8">
-            <div className="flex items-center justify-between">
+          <section className="md:col-span-2 bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm p-6 md:p-8 space-y-8">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex items-center gap-2">
                 <Database size={20} className="text-emerald-500" />
                 <h3 className="text-xl font-black text-slate-800 dark:text-white">Data Management</h3>
@@ -215,17 +215,17 @@ const Settings: React.FC = () => {
               {/* Portability */}
               <div className="space-y-4">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Portability & Backup</p>
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-col sm:flex-row gap-3">
                   <button
                     onClick={handleExportCSV}
-                    className="flex-1 min-w-[140px] flex items-center justify-center gap-2 bg-slate-900 dark:bg-blue-600 text-white px-6 py-4 rounded-2xl text-sm font-black hover:opacity-90 transition-all"
+                    className="flex-1 flex items-center justify-center gap-2 bg-slate-900 dark:bg-blue-600 text-white px-6 py-4 rounded-2xl text-sm font-black hover:opacity-90 transition-all"
                   >
                     <Download size={18} />
                     Export CSV
                   </button>
                   <button
                     onClick={handleExportJSON}
-                    className="flex-1 min-w-[140px] flex items-center justify-center gap-2 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-white px-6 py-4 rounded-2xl text-sm font-black hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-slate-700"
+                    className="flex-1 flex items-center justify-center gap-2 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-white px-6 py-4 rounded-2xl text-sm font-black hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-slate-700"
                   >
                     <Download size={18} />
                     Export JSON
@@ -253,7 +253,7 @@ const Settings: React.FC = () => {
                     className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl py-4 pl-12 pr-4 text-sm font-bold text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                   />
                 </div>
-                <div className="flex gap-3">
+                <div className="flex flex-col sm:flex-row gap-3">
                   <button
                     onClick={handleEncryptAtRest}
                     className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-4 rounded-2xl text-sm font-black hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20"
