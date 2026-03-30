@@ -3,9 +3,10 @@ import Dashboard from './components/Dashboard'
 import MonthlyDues from './components/MonthlyDues'
 import Goals from './components/Goals'
 import Analytics from './components/Analytics'
+import Settings from './components/Settings'
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'goals' | 'dues' | 'analytics'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'goals' | 'dues' | 'analytics' | 'settings'>('dashboard');
 
   return (
     <div className="bg-slate-50 min-h-screen">
@@ -57,6 +58,16 @@ function App() {
             >
               Analytics
             </button>
+            <button
+              onClick={() => setActiveTab('settings')}
+              className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all ${
+                activeTab === 'settings'
+                  ? 'bg-white text-blue-600 shadow-lg shadow-blue-200/50'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              Settings
+            </button>
           </div>
         </div>
       </nav>
@@ -67,6 +78,7 @@ function App() {
         {activeTab === 'goals' && <Goals />}
         {activeTab === 'dues' && <MonthlyDues />}
         {activeTab === 'analytics' && <Analytics />}
+        {activeTab === 'settings' && <Settings />}
       </main>
     </div>
   )

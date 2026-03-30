@@ -1,17 +1,18 @@
 import React from 'react';
 import { Plane, ShoppingCart, Shield, Car, CheckCircle, Info, TrendingUp, PiggyBank, Calendar, AlertCircle } from 'lucide-react';
-import type { GoalType } from '../types/goals';
+import type { LucideIcon } from 'lucide-react';
+import type { GoalType, DeadlineGoal, ReserveGoal } from '../types/goals';
 import { mockGoals } from '../data/goals';
 import { calculateGoalAllocation, calculateGoalPercentage } from '../utils/goalUtils';
 
-const ICON_MAP: Record<string, any> = {
+const ICON_MAP: Record<string, LucideIcon> = {
   Plane,
   ShoppingCart,
   Shield,
   Car
 };
 
-const TYPE_CONFIG: Record<GoalType, { label: string; icon: any; bg: string; text: string }> = {
+const TYPE_CONFIG: Record<GoalType, { label: string; icon: LucideIcon; bg: string; text: string }> = {
   someday: { label: 'Someday', icon: PiggyBank, bg: 'bg-indigo-50', text: 'text-indigo-600' },
   monthly: { label: 'Monthly Top-up', icon: Calendar, bg: 'bg-green-50', text: 'text-green-600' },
   deadline: { label: 'Time Bound', icon: TrendingUp, bg: 'bg-blue-50', text: 'text-blue-600' },
@@ -107,7 +108,7 @@ const Goals: React.FC = () => {
                       <>
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Time Left</p>
                         <p className="text-sm font-black text-slate-700 tracking-tight">
-                          {(goal as any).monthsRemaining} Months
+                          {(goal as DeadlineGoal).monthsRemaining} Months
                         </p>
                       </>
                     )}
@@ -115,7 +116,7 @@ const Goals: React.FC = () => {
                       <>
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Floor Limit</p>
                         <p className="text-sm font-black text-slate-700 tracking-tight">
-                          ${(goal as any).floor.toLocaleString()}
+                          ${(goal as ReserveGoal).floor.toLocaleString()}
                         </p>
                       </>
                     )}
