@@ -8,10 +8,45 @@ import {
   ShieldCheck,
   Target
 } from 'lucide-react';
+import { motion, useReducedMotion, AnimatePresence } from 'framer-motion';
+import type { Variants } from 'framer-motion';
 import { mockGoals } from '../data/goals';
 import { calculateTotalGoalAllocations } from '../utils/goalUtils';
 import { mockDues, mockIncomes } from '../data/dues';
 import { mockTransactions } from '../data/transactions';
+
+const CountUp: React.FC<{ value: number }> = ({ value }) => {
+  const shouldReduceMotion = useReducedMotion();
+  const [displayValue, setDisplayValue] = useState(shouldReduceMotion ? value : 0);
+
+  useEffect(() => {
+    if (shouldReduceMotion) {
+      return;
+    }
+
+    const end = value;
+    const duration = 2000;
+    const startTime = performance.now();
+
+    const animate = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      // Ease out expo
+      const easeProgress = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+
+      setDisplayValue(Math.floor(easeProgress * end));
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+
+    requestAnimationFrame(animate);
+  }, [value, shouldReduceMotion]);
+
+  return <>{displayValue.toLocaleString()}</>;
+};
 
 const Dashboard: React.FC = () => {
   // Derived metrics from centralized data
@@ -48,145 +83,235 @@ const Dashboard: React.FC = () => {
     return () => clearInterval(interval);
   }, [tips.length]);
 
+  const shouldReduceMotion = useReducedMotion();
+
+  const cardVariants: Variants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.5, ease: "easeOut" }
+    }
+  };
+
+  const glassStyle = "bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl border border-white/20 dark:border-slate-800/50 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] rounded-[20px]";
+
   return (
-    <div className="p-6">
-      <div className="max-w-6xl mx-auto space-y-8">
+    <div className="p-6 min-h-screen bg-slate-50/50 dark:bg-slate-950/50 transition-colors duration-500">
+      <motion.div
+        layout
+        className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 grid-rows-auto gap-6"
+      >
 
-        {/* Top Section: Safe to Spend (Priority KPI) - Inverted Pyramid Top */}
-        <section className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-8 text-white shadow-xl shadow-blue-200/50 relative overflow-hidden group">
+        {/* Safe to Spend - Large Hero Card (Inverted Pyramid Top) */}
+        <motion.section
+          layout
+          variants={cardVariants}
+          initial="hidden"
+          animate="visible"
+          className={`col-span-1 md:col-span-4 lg:col-span-4 row-span-2 relative overflow-hidden group bg-gradient-to-br from-blue-600/90 to-indigo-700/90 rounded-[20px] p-8 text-white shadow-2xl shadow-blue-500/20 border border-white/20`}
+        >
+          {/* Shimmer Effect */}
+          {!shouldReduceMotion && (
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+              <motion.div
+                animate={{
+                  x: ['-100%', '100%'],
+                }}
+                transition={{
+                  repeat: Infinity,
+                  duration: 3,
+                  ease: "linear",
+                }}
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12"
+              />
+            </div>
+          )}
+
           <div className="absolute -right-12 -top-12 w-64 h-64 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-700"></div>
-          <header className="relative z-10">
-            <div className="flex items-center gap-2 mb-1">
-              <ShieldCheck size={16} className="text-blue-200" />
-              <h2 className="text-blue-100 text-xs font-bold uppercase tracking-widest">Safe to Spend</h2>
-            </div>
-            <div className="flex items-baseline gap-3 mt-2">
-              <span className="text-6xl font-black tracking-tighter">${safeToSpend.toLocaleString()}</span>
-              <span className="text-blue-100/80 font-medium italic text-lg">available now</span>
-            </div>
-          </header>
-          <div className="mt-8 flex flex-wrap gap-3 relative z-10">
-            <div className="bg-white/15 backdrop-blur-md px-4 py-2 rounded-2xl flex items-center gap-2 border border-white/10">
-              <span className="text-blue-200 text-xs uppercase font-bold">Income:</span>
-              <span className="font-bold text-sm">${income.toLocaleString()}</span>
-            </div>
-            <div className="bg-white/15 backdrop-blur-md px-4 py-2 rounded-2xl flex items-center gap-2 border border-white/10">
-              <span className="text-blue-200 text-xs uppercase font-bold">Goals:</span>
-              <span className="font-bold text-sm">-${goalAllocations.toLocaleString()}</span>
-            </div>
-            <div className="bg-white/15 backdrop-blur-md px-4 py-2 rounded-2xl flex items-center gap-2 border border-white/10">
-              <span className="text-blue-200 text-xs uppercase font-bold">Buffer:</span>
-              <span className="font-bold text-sm">-${safetyBuffer.toLocaleString()}</span>
-            </div>
-          </div>
-        </section>
 
-        {/* Middle Section: Summary Cards - Inverted Pyramid Middle */}
-        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[
-            { label: 'Monthly Income', value: income, color: 'text-emerald-600', icon: ArrowUpCircle, bg: 'bg-emerald-50' },
-            { label: 'Expenses', value: expenses, color: 'text-slate-800', icon: ArrowDownCircle, bg: 'bg-slate-50' },
-            { label: 'Dues Left', value: duesLeft, color: 'text-indigo-600', icon: Target, bg: 'bg-indigo-50' },
-            { label: 'Net Saving', value: netSaving, color: netSaving >= 0 ? 'text-emerald-600' : 'text-rose-600', icon: TrendingUp, bg: netSaving >= 0 ? 'bg-emerald-50' : 'bg-rose-50' }
-          ].map((card, idx) => (
-            <div key={idx} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-              <div className="flex justify-between items-start mb-4">
-                <div className={`${card.bg} p-2.5 rounded-2xl`}>
-                  <card.icon size={20} className={card.color} />
+          <header className="relative z-10 h-full flex flex-col justify-between">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <ShieldCheck size={16} className="text-blue-200" />
+                <h2 className="text-blue-100 text-xs font-black uppercase tracking-widest">Safe to Spend</h2>
+              </div>
+              <div className="flex flex-col mt-4">
+                <div className="flex items-baseline gap-3">
+                  <span className="text-7xl font-black tracking-tighter drop-shadow-sm">
+                    $<CountUp value={safeToSpend} />
+                  </span>
+                  <span className="text-blue-100/80 font-bold italic text-lg mb-2">available now</span>
                 </div>
               </div>
-              <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">{card.label}</p>
-              <p className={`text-2xl font-black mt-1 ${card.color}`}>${card.value.toLocaleString()}</p>
             </div>
-          ))}
-        </section>
 
-        {/* Bottom Section: Activities & Tips - Inverted Pyramid Base */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Recent Activity */}
-          <section className="lg:col-span-2 bg-white rounded-3xl border border-slate-100 shadow-sm p-8">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-                <Wallet size={20} className="text-blue-500" />
-                Recent Activity
-              </h3>
-              <button className="text-xs font-bold text-blue-600 hover:text-blue-700 uppercase tracking-widest bg-blue-50 px-3 py-1.5 rounded-xl transition-colors">
-                View All
-              </button>
-            </div>
-            <div className="space-y-1">
-              {mockTransactions.slice(0, 5).map((tx) => (
-                <div key={tx.id} className="group py-4 flex justify-between items-center border-b border-slate-50 last:border-0 hover:bg-slate-50/50 px-2 -mx-2 rounded-2xl transition-colors">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-lg ${
-                      tx.amount > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-600'
-                    }`}>
-                      {tx.description[0]}
-                    </div>
-                    <div>
-                      <p className="font-bold text-slate-800 group-hover:text-blue-600 transition-colors">{tx.description}</p>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{tx.date} • {tx.category}</p>
-                    </div>
-                  </div>
-                  <span className={`font-black text-lg ${tx.amount > 0 ? 'text-emerald-600' : 'text-slate-800'}`}>
-                    {tx.amount > 0 ? '+' : ''}{tx.amount.toFixed(2)}
-                  </span>
+            <div className="mt-12 flex flex-wrap gap-4">
+              {[
+                { label: 'Income', val: income, sign: '+' },
+                { label: 'Dues', val: fixedDuesTotal, sign: '-' },
+                { label: 'Goals', val: goalAllocations, sign: '-' },
+                { label: 'Buffer', val: safetyBuffer, sign: '-' }
+              ].map((item, i) => (
+                <div key={i} className="bg-white/10 backdrop-blur-xl px-5 py-3 rounded-2xl flex flex-col gap-1 border border-white/10 hover:bg-white/20 transition-colors">
+                  <span className="text-blue-200 text-[10px] uppercase font-black tracking-widest">{item.label}</span>
+                  <span className="font-black text-lg">{item.sign}${item.val.toLocaleString()}</span>
                 </div>
               ))}
             </div>
-          </section>
+          </header>
+        </motion.section>
 
-          {/* Tips Section */}
-          <aside className="space-y-6">
-            <section className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100 rounded-3xl p-8 relative overflow-hidden">
-              <div className="absolute -right-6 -bottom-6 text-emerald-100/50 rotate-12">
-                <Lightbulb size={120} />
+        {/* Summary Cards - Grid Integration */}
+        {[
+          { label: 'Monthly Income', value: income, color: 'text-emerald-500', icon: ArrowUpCircle, bg: 'bg-emerald-500/10' },
+          { label: 'Expenses', value: expenses, color: 'text-slate-600 dark:text-slate-400', icon: ArrowDownCircle, bg: 'bg-slate-500/10' },
+          { label: 'Dues Left', value: duesLeft, color: 'text-blue-500', icon: Target, bg: 'bg-blue-500/10' },
+          { label: 'Net Saving', value: netSaving, color: netSaving >= 0 ? 'text-emerald-500' : 'text-rose-500', icon: TrendingUp, bg: netSaving >= 0 ? 'bg-emerald-500/10' : 'bg-rose-500/10' }
+        ].map((card, idx) => (
+          <motion.div
+            layout
+            key={idx}
+            variants={cardVariants}
+            initial="hidden"
+            animate="visible"
+            transition={{ delay: 0.1 * (idx + 1) }}
+            className={`col-span-1 md:col-span-2 lg:col-span-2 p-6 flex flex-col justify-center gap-2 group cursor-default ${glassStyle}`}
+          >
+            <div className="flex justify-between items-center">
+              <div className={`${card.bg} p-2 rounded-xl transition-transform group-hover:scale-110 duration-500`}>
+                <card.icon size={20} className={card.color} />
               </div>
-              <div className="relative z-10">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="bg-emerald-500 p-2 rounded-xl text-white">
-                    <Lightbulb size={18} />
+              <p className="text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-widest">{card.label}</p>
+            </div>
+            <p className={`text-3xl font-black mt-2 tracking-tight ${card.color}`}>
+              ${card.value.toLocaleString()}
+            </p>
+          </motion.div>
+        ))}
+
+        {/* Recent Activity - Bento Main Content */}
+        <motion.section
+          layout
+          variants={cardVariants}
+          initial="hidden"
+          animate="visible"
+          className={`col-span-1 md:col-span-4 lg:col-span-4 p-8 relative overflow-hidden ${glassStyle}`}
+        >
+          <div className="flex justify-between items-center mb-8">
+            <h3 className="text-xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
+              <Wallet size={20} className="text-blue-500" />
+              Recent Activity
+            </h3>
+            <button className="text-xs font-black text-blue-600 dark:text-blue-400 hover:text-blue-700 uppercase tracking-widest bg-blue-50 dark:bg-blue-900/30 px-4 py-2 rounded-xl transition-all hover:scale-105 active:scale-95">
+              View All
+            </button>
+          </div>
+          <div className="space-y-2">
+            {mockTransactions.slice(0, 4).map((tx) => (
+              <div key={tx.id} className="group py-4 flex justify-between items-center border-b border-slate-100/50 dark:border-slate-800/50 last:border-0 hover:bg-white/40 dark:hover:bg-slate-800/40 px-3 -mx-3 rounded-2xl transition-all duration-300">
+                <div className="flex items-center gap-4">
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-xl shadow-sm ${
+                    tx.amount > 0 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-slate-500/10 text-slate-600 dark:text-slate-400'
+                  }`}>
+                    {tx.description[0]}
                   </div>
-                  <h3 className="text-emerald-900 font-black tracking-tight">Smart Tips</h3>
+                  <div>
+                    <p className="font-black text-slate-800 dark:text-white group-hover:text-blue-600 transition-colors">{tx.description}</p>
+                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5">{tx.date} • {tx.category}</p>
+                  </div>
                 </div>
-                <div className="min-h-[100px] flex items-center">
-                  <p className="text-emerald-800 font-medium italic leading-relaxed text-sm">
+                <span className={`font-black text-xl tracking-tight ${tx.amount > 0 ? 'text-emerald-500' : 'text-slate-800 dark:text-slate-200'}`}>
+                  {tx.amount > 0 ? '+' : ''}{tx.amount.toFixed(2)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </motion.section>
+
+        {/* Tips & Smart Analysis - Side Bento Items */}
+        <motion.aside
+          layout
+          className="col-span-1 md:col-span-4 lg:col-span-2 space-y-6"
+        >
+          <motion.section
+            layout
+            variants={cardVariants}
+            initial="hidden"
+            animate="visible"
+            className={`p-8 relative overflow-hidden bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-[20px] shadow-xl shadow-emerald-500/10`}
+          >
+            <div className="absolute -right-6 -bottom-6 text-white/10 rotate-12">
+              <Lightbulb size={160} />
+            </div>
+            <div className="relative z-10">
+              <div className="flex items-center gap-2 mb-6">
+                <div className="bg-white/20 p-2 rounded-xl backdrop-blur-md">
+                  <Lightbulb size={20} className="text-white" />
+                </div>
+                <h3 className="font-black tracking-tight text-lg">Smart Insights</h3>
+              </div>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentTipIndex}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.4 }}
+                  className="min-h-[100px] flex items-center"
+                >
+                  <p className="text-white font-bold leading-relaxed italic">
                     "{tips[currentTipIndex]}"
                   </p>
-                </div>
-                <div className="flex gap-1.5 mt-4">
-                  {tips.map((_, i) => (
-                    <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i === currentTipIndex ? 'w-6 bg-emerald-500' : 'w-1.5 bg-emerald-200'}`}></div>
-                  ))}
-                </div>
-              </div>
-            </section>
-
-            <section className="bg-white border border-slate-100 rounded-3xl p-8 shadow-sm">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-slate-800 font-black text-sm uppercase tracking-widest">50/30/20 Status</h3>
-              </div>
-              <div className="space-y-5">
-                {[
-                  { label: 'Needs (50%)', current: 45, color: 'bg-blue-500', barBg: 'bg-blue-100', text: 'text-blue-600' },
-                  { label: 'Savings (20%)', current: 20, color: 'bg-emerald-500', barBg: 'bg-emerald-100', text: 'text-emerald-600' }
-                ].map((stat, i) => (
-                  <div key={i}>
-                    <div className="flex justify-between text-xs mb-2">
-                      <span className={`${stat.text} font-black uppercase tracking-widest`}>{stat.label}</span>
-                      <span className="text-slate-800 font-black">{stat.current}%</span>
-                    </div>
-                    <div className={`w-full ${stat.barBg} rounded-full h-2.5 overflow-hidden`}>
-                      <div className={`${stat.color} h-full rounded-full transition-all duration-1000`} style={{ width: `${stat.current}%` }}></div>
-                    </div>
-                  </div>
+                </motion.div>
+              </AnimatePresence>
+              <div className="flex gap-2 mt-6">
+                {tips.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setCurrentTipIndex(i)}
+                    className={`h-2 rounded-full transition-all duration-300 ${i === currentTipIndex ? 'w-8 bg-white' : 'w-2 bg-white/30'}`}
+                  ></button>
                 ))}
               </div>
-            </section>
-          </aside>
-        </div>
+            </div>
+          </motion.section>
 
-      </div>
+          <motion.section
+            layout
+            variants={cardVariants}
+            initial="hidden"
+            animate="visible"
+            className={`p-8 ${glassStyle}`}
+          >
+            <div className="flex justify-between items-center mb-8">
+              <h3 className="text-slate-800 dark:text-white font-black text-xs uppercase tracking-widest">Efficiency Status</h3>
+            </div>
+            <div className="space-y-6">
+              {[
+                { label: 'Essentials', current: 45, color: 'bg-blue-500', track: 'bg-blue-500/10', text: 'text-blue-500' },
+                { label: 'Long-term Goals', current: 20, color: 'bg-emerald-500', track: 'bg-emerald-500/10', text: 'text-emerald-500' }
+              ].map((stat, i) => (
+                <div key={i}>
+                  <div className="flex justify-between text-[10px] mb-2">
+                    <span className={`${stat.text} font-black uppercase tracking-widest`}>{stat.label}</span>
+                    <span className="text-slate-800 dark:text-slate-200 font-black">{stat.current}%</span>
+                  </div>
+                  <div className={`w-full ${stat.track} rounded-full h-3 overflow-hidden border border-white/10 dark:border-slate-800`}>
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${stat.current}%` }}
+                      transition={{ duration: 1.5, ease: "easeOut", delay: 0.5 }}
+                      className={`${stat.color} h-full rounded-full`}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.section>
+        </motion.aside>
+
+      </motion.div>
     </div>
   );
 };
