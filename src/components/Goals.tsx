@@ -21,14 +21,14 @@ const TYPE_CONFIG: Record<GoalType, { label: string; icon: LucideIcon; bg: strin
 
 const Goals: React.FC = () => {
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-8">
+    <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-6 md:space-y-8">
       <header className="flex flex-col gap-2">
         <div className="flex items-center gap-2 text-blue-600 mb-1">
           <TrendingUp size={20} />
           <span className="text-xs font-black uppercase tracking-widest">Financial Ambition</span>
         </div>
-        <h1 className="text-4xl font-black text-slate-800 tracking-tight">Financial Goals</h1>
-        <p className="text-slate-500 max-w-2xl font-medium">
+        <h1 className="text-3xl md:text-4xl font-black text-slate-800 tracking-tight">Financial Goals</h1>
+        <p className="text-slate-500 max-w-2xl font-medium text-sm md:text-base">
           Visualize your progress towards long-term dreams and short-term stability.
           Allocation is automatically calculated based on goal types.
         </p>
@@ -42,14 +42,14 @@ const Goals: React.FC = () => {
           const percentage = calculateGoalPercentage(goal);
 
           return (
-            <div key={goal.id} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl hover:border-blue-100 transition-all group">
+            <div key={goal.id} className="bg-white p-5 md:p-6 rounded-[1.5rem] md:rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl hover:border-blue-100 transition-all group">
               <div className="flex justify-between items-start mb-6">
-                <div className="flex gap-4 items-center">
-                  <div className={`p-4 rounded-2xl ${TypeInfo.bg} ${TypeInfo.text} group-hover:scale-110 transition-transform`}>
-                    <Icon size={24} strokeWidth={2.5} />
+                <div className="flex gap-3 md:gap-4 items-center">
+                  <div className={`p-3 md:p-4 rounded-xl md:rounded-2xl ${TypeInfo.bg} ${TypeInfo.text} group-hover:scale-110 transition-transform`}>
+                    <Icon className="w-5 h-5 md:w-6 md:h-6" strokeWidth={2.5} />
                   </div>
                   <div>
-                    <h3 className="font-black text-slate-800 text-xl tracking-tight">{goal.title}</h3>
+                    <h3 className="font-black text-slate-800 text-lg md:text-xl tracking-tight">{goal.title}</h3>
                     <div className="flex items-center gap-1.5 mt-1">
                       <TypeInfo.icon size={14} className={TypeInfo.text} />
                       <span className={`text-[10px] font-black uppercase tracking-tighter ${TypeInfo.text}`}>
@@ -69,17 +69,17 @@ const Goals: React.FC = () => {
                 <div className="flex justify-between items-end">
                   <div className="space-y-1">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Current Progress</p>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-black text-slate-800 tracking-tighter">
+                    <div className="flex flex-wrap items-baseline gap-1">
+                      <span className="text-2xl md:text-3xl font-black text-slate-800 tracking-tighter">
                         ${goal.current.toLocaleString()}
                       </span>
-                      <span className="text-slate-400 font-bold text-sm tracking-tight">
+                      <span className="text-slate-400 font-bold text-xs md:text-sm tracking-tight">
                         / ${goal.target.toLocaleString()}
                       </span>
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className="text-2xl font-black text-blue-600 tracking-tight">
+                    <span className="text-xl md:text-2xl font-black text-blue-600 tracking-tight">
                       {Math.round(percentage)}%
                     </span>
                   </div>

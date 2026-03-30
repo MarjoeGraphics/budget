@@ -22,6 +22,8 @@ import { mockTransactions } from '../data/transactions';
 import { mockDues, mockIncomes, initialBalance } from '../data/dues';
 
 const Analytics: React.FC = () => {
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
   // 1. Cumulative Balance Data (Partial Sum Series)
   const cumulativeData = useMemo(() => {
     const data = [];
@@ -119,8 +121,8 @@ const Analytics: React.FC = () => {
   const isOverBudget = projectedTotal > totalDiscretionaryBudget;
 
   return (
-    <div className="p-6">
-      <div className="max-w-6xl mx-auto space-y-8">
+    <div className="p-4 md:p-6">
+      <div className="max-w-6xl mx-auto space-y-6 md:space-y-8">
 
         {/* Page Header */}
         <header>
@@ -128,16 +130,16 @@ const Analytics: React.FC = () => {
             <Activity size={18} className="text-indigo-600" />
             <h2 className="text-indigo-600 text-xs font-black uppercase tracking-widest">Financial Analytics</h2>
           </div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tight">Trends & Insights</h1>
-          <p className="text-slate-500 mt-2 font-medium">Deep dive into your long-term wealth accumulation and spending patterns.</p>
+          <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Trends & Insights</h1>
+          <p className="text-slate-500 mt-2 font-medium text-sm md:text-base">Deep dive into your long-term wealth accumulation and spending patterns.</p>
         </header>
 
         {/* Top Section: Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
 
           {/* Cumulative Balance Chart */}
-          <section className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8 flex flex-col">
-            <div className="flex justify-between items-start mb-8">
+          <section className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 md:p-8 flex flex-col">
+            <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-8">
               <div>
                 <h3 className="text-xl font-black text-slate-800 tracking-tight">Cumulative Balance</h3>
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Running Net Worth Total</p>
@@ -147,7 +149,7 @@ const Analytics: React.FC = () => {
                 <span className="text-xs font-black">+12.4%</span>
               </div>
             </div>
-            <div className="h-[300px] w-full mt-auto">
+            <div className="h-[250px] md:h-[300px] w-full mt-auto">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={cumulativeData}>
                   <defs>
@@ -162,7 +164,7 @@ const Analytics: React.FC = () => {
                     axisLine={false}
                     tickLine={false}
                     tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 700}}
-                    interval={6}
+                    interval={isMobile ? 12 : 6}
                   />
                   <YAxis
                     axisLine={false}
@@ -189,8 +191,8 @@ const Analytics: React.FC = () => {
           </section>
 
           {/* Income vs Spending Chart */}
-          <section className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8 flex flex-col">
-            <div className="flex justify-between items-start mb-8">
+          <section className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 md:p-8 flex flex-col">
+            <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-8">
               <div>
                 <h3 className="text-xl font-black text-slate-800 tracking-tight">Cashflow Comparison</h3>
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Income vs. Spending</p>
@@ -206,7 +208,7 @@ const Analytics: React.FC = () => {
                  </div>
               </div>
             </div>
-            <div className="h-[300px] w-full mt-auto">
+            <div className="h-[250px] md:h-[300px] w-full mt-auto">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={comparisonData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -236,10 +238,10 @@ const Analytics: React.FC = () => {
         </div>
 
         {/* Middle Section: Spending Velocity & Anomalies */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 pb-12">
 
           {/* Spending Velocity Card */}
-          <section className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8">
+          <section className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 md:p-8">
             <h3 className="text-lg font-black text-slate-800 tracking-tight mb-6 flex items-center gap-2">
               <Activity size={20} className="text-blue-500" />
               Monthly Activities Review
@@ -281,13 +283,13 @@ const Analytics: React.FC = () => {
           </section>
 
           {/* Anomaly Module */}
-          <section className="lg:col-span-2 bg-slate-900 rounded-3xl p-8 text-white relative overflow-hidden group">
+          <section className="lg:col-span-2 bg-slate-900 rounded-3xl p-6 md:p-8 text-white relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:rotate-12 transition-transform duration-700">
               <AlertTriangle size={120} />
             </div>
 
             <div className="relative z-10 h-full flex flex-col">
-              <div className="flex items-center justify-between mb-8">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
                 <div>
                   <h3 className="text-xl font-black tracking-tight">Smart Anomaly Flags</h3>
                   <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">AI-Powered Transaction Auditing</p>
@@ -299,13 +301,13 @@ const Analytics: React.FC = () => {
 
               <div className="space-y-4 flex-grow overflow-y-auto pr-2 scrollbar-hide">
                 {anomalies.map((anomaly, idx) => (
-                  <div key={idx} className="bg-white/5 border border-white/10 p-5 rounded-2xl hover:bg-white/10 transition-all cursor-pointer group/item flex items-start gap-4">
+                  <div key={idx} className="bg-white/5 border border-white/10 p-4 md:p-5 rounded-2xl hover:bg-white/10 transition-all cursor-pointer group/item flex items-start gap-4">
                     <div className={`${anomaly.bg} ${anomaly.color} p-3 rounded-xl shadow-lg`}>
                       <anomaly.icon size={20} />
                     </div>
-                    <div>
-                      <h4 className="font-black text-slate-100 tracking-tight">{anomaly.title}</h4>
-                      <p className="text-slate-400 text-sm font-medium mt-1 leading-relaxed">
+                    <div className="flex-1 overflow-hidden">
+                      <h4 className="font-black text-slate-100 tracking-tight text-sm md:text-base truncate md:whitespace-normal">{anomaly.title}</h4>
+                      <p className="text-slate-400 text-xs md:text-sm font-medium mt-1 leading-relaxed">
                         {anomaly.detail}
                       </p>
                       <div className="mt-4 flex gap-3">
