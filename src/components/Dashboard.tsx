@@ -3,45 +3,33 @@ import {
   Wallet,
   ArrowUpCircle,
   ArrowDownCircle,
-  Clock,
   TrendingUp,
   Lightbulb,
-  ChevronRight,
-  ShieldCheck
+  ShieldCheck,
+  Target
 } from 'lucide-react';
-
-interface Transaction {
-  id: number;
-  description: string;
-  amount: number;
-  date: string;
-  category: string;
-}
+import { mockGoals } from '../data/goals';
+import { calculateTotalGoalAllocations } from '../utils/goalUtils';
+import { mockDues, mockIncomes } from '../data/dues';
+import { mockTransactions } from '../data/transactions';
 
 const Dashboard: React.FC = () => {
-  // Mock data representing a more dynamic state
-  const income = 5000;
-  const fixedDues = 1500;
-  const goalAllocations = 1000;
+  // Derived metrics from centralized data
+  const income = useMemo(() => mockIncomes.reduce((sum, inc) => sum + inc.amount, 0), []);
+  const fixedDuesTotal = useMemo(() => mockDues.reduce((sum, due) => sum + due.amount, 0), []);
+  const duesPaidTotal = useMemo(() => mockDues.filter(due => due.isPaid).reduce((sum, due) => sum + due.amount, 0), []);
+  const duesLeft = fixedDuesTotal - duesPaidTotal;
+
+  const goalAllocations = useMemo(() => calculateTotalGoalAllocations(mockGoals), []);
   const safetyBuffer = 500;
 
-  const recentTransactions: Transaction[] = [
-    { id: 1, description: 'Grocery Store', amount: -85.50, date: '2023-10-25', category: 'Food' },
-    { id: 2, description: 'Salary', amount: 5000.00, date: '2023-10-01', category: 'Income' },
-    { id: 3, description: 'Rent', amount: -1200.00, date: '2023-10-02', category: 'Housing' },
-    { id: 4, description: 'Internet Bill', amount: -60.00, date: '2023-10-05', category: 'Utilities' },
-    { id: 5, description: 'Coffee Shop', amount: -5.75, date: '2023-10-26', category: 'Food' },
-  ];
-
-  // Derive metrics from data
   const expenses = useMemo(() =>
-    Math.abs(recentTransactions.filter(t => t.amount < 0 && t.category !== 'Housing').reduce((sum, t) => sum + t.amount, 0)),
-  [recentTransactions]);
+    Math.abs(mockTransactions.filter(t => t.amount < 0 && t.category !== 'Housing').reduce((sum, t) => sum + t.amount, 0)),
+  []);
 
   // S = I - (F + G + B)
-  const safeToSpend = income - (fixedDues + goalAllocations + safetyBuffer);
-  const duesLeft = fixedDues - 1200; // Salary covers rent already in mock
-  const netSaving = income - expenses - fixedDues;
+  const safeToSpend = income - (fixedDuesTotal + goalAllocations + safetyBuffer);
+  const netSaving = income - expenses - fixedDuesTotal;
 
   const tips = [
     "50/30/20 Rule: Allocate 50% to needs, 30% to wants, and 20% to savings.",
@@ -83,6 +71,10 @@ const Dashboard: React.FC = () => {
               <span className="font-bold text-sm">${income.toLocaleString()}</span>
             </div>
             <div className="bg-white/15 backdrop-blur-md px-4 py-2 rounded-2xl flex items-center gap-2 border border-white/10">
+              <span className="text-blue-200 text-xs uppercase font-bold">Goals:</span>
+              <span className="font-bold text-sm">-${goalAllocations.toLocaleString()}</span>
+            </div>
+            <div className="bg-white/15 backdrop-blur-md px-4 py-2 rounded-2xl flex items-center gap-2 border border-white/10">
               <span className="text-blue-200 text-xs uppercase font-bold">Buffer:</span>
               <span className="font-bold text-sm">-${safetyBuffer.toLocaleString()}</span>
             </div>
@@ -94,7 +86,7 @@ const Dashboard: React.FC = () => {
           {[
             { label: 'Monthly Income', value: income, color: 'text-emerald-600', icon: ArrowUpCircle, bg: 'bg-emerald-50' },
             { label: 'Expenses', value: expenses, color: 'text-slate-800', icon: ArrowDownCircle, bg: 'bg-slate-50' },
-            { label: 'Dues Left', value: duesLeft, color: 'text-blue-600', icon: Clock, bg: 'bg-blue-50' },
+            { label: 'Dues Left', value: duesLeft, color: 'text-indigo-600', icon: Target, bg: 'bg-indigo-50' },
             { label: 'Net Saving', value: netSaving, color: netSaving >= 0 ? 'text-emerald-600' : 'text-rose-600', icon: TrendingUp, bg: netSaving >= 0 ? 'bg-emerald-50' : 'bg-rose-50' }
           ].map((card, idx) => (
             <div key={idx} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
@@ -123,7 +115,7 @@ const Dashboard: React.FC = () => {
               </button>
             </div>
             <div className="space-y-1">
-              {recentTransactions.map((tx) => (
+              {mockTransactions.slice(0, 5).map((tx) => (
                 <div key={tx.id} className="group py-4 flex justify-between items-center border-b border-slate-50 last:border-0 hover:bg-slate-50/50 px-2 -mx-2 rounded-2xl transition-colors">
                   <div className="flex items-center gap-4">
                     <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-lg ${
@@ -173,7 +165,6 @@ const Dashboard: React.FC = () => {
             <section className="bg-white border border-slate-100 rounded-3xl p-8 shadow-sm">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-slate-800 font-black text-sm uppercase tracking-widest">50/30/20 Status</h3>
-                <ChevronRight size={16} className="text-slate-300" />
               </div>
               <div className="space-y-5">
                 {[

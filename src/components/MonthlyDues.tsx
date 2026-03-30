@@ -11,42 +11,9 @@ import {
   TrendingUp,
   ShieldCheck
 } from 'lucide-react';
-
-interface DueItem {
-  id: string;
-  name: string;
-  amount: number;
-  dayOfMonth: number;
-  category: string;
-  isPaid: boolean;
-}
-
-interface IncomeEvent {
-  id: string;
-  name: string;
-  amount: number;
-  dayOfMonth: number;
-}
+import { mockDues, mockIncomes, initialBalance } from '../data/dues';
 
 const MonthlyDues: React.FC = () => {
-  // Mock data for dues and income
-  const initialBalance = 400; // Starting with a lower balance to demonstrate crunch days
-
-  const dues: DueItem[] = [
-    { id: '1', name: 'Rent', amount: 1200, dayOfMonth: 1, category: 'Housing', isPaid: true },
-    { id: '2', name: 'Internet', amount: 60, dayOfMonth: 5, category: 'Utilities', isPaid: true },
-    { id: '7', name: 'Emergency Repair', amount: 1200, dayOfMonth: 10, category: 'Unexpected', isPaid: false },
-    { id: '3', name: 'Electricity', amount: 85, dayOfMonth: 12, category: 'Utilities', isPaid: false },
-    { id: '4', name: 'Gym Membership', amount: 45, dayOfMonth: 15, category: 'Fitness', isPaid: false },
-    { id: '5', name: 'Netflix', amount: 15, dayOfMonth: 20, category: 'Entertainment', isPaid: false },
-    { id: '6', name: 'Car Insurance', amount: 110, dayOfMonth: 25, category: 'Auto', isPaid: false },
-  ];
-
-  const incomes: IncomeEvent[] = [
-    { id: 'inc1', name: 'Primary Salary', amount: 2500, dayOfMonth: 1 },
-    { id: 'inc2', name: 'Secondary Salary', amount: 2500, dayOfMonth: 28 },
-  ];
-
   // Cashflow logic: Calculate daily balance projections
   const dailyProjections = useMemo(() => {
     const projections = [];
@@ -54,11 +21,11 @@ const MonthlyDues: React.FC = () => {
     const daysInMonth = 30;
 
     for (let day = 1; day <= daysInMonth; day++) {
-      const dailyIncome = incomes
+      const dailyIncome = mockIncomes
         .filter(inc => inc.dayOfMonth === day)
         .reduce((sum, inc) => sum + inc.amount, 0);
 
-      const dailyDues = dues
+      const dailyDues = mockDues
         .filter(due => due.dayOfMonth === day)
         .reduce((sum, due) => sum + due.amount, 0);
 
@@ -73,7 +40,7 @@ const MonthlyDues: React.FC = () => {
       });
     }
     return projections;
-  }, [initialBalance, dues, incomes]);
+  }, []);
 
   const crunchPeriod = useMemo(() => {
     const start = dailyProjections.findIndex(p => p.isCrunchDay);
@@ -85,6 +52,10 @@ const MonthlyDues: React.FC = () => {
     }
     return { start: start + 1, end: end + 1 };
   }, [dailyProjections]);
+
+  const fixedDuesTotal = useMemo(() => mockDues.reduce((sum, due) => sum + due.amount, 0), []);
+  const monthlyIncome = useMemo(() => mockIncomes.reduce((sum, inc) => sum + inc.amount, 0), []);
+  const essentialCoveragePercent = (fixedDuesTotal / monthlyIncome) * 100;
 
   return (
     <div className="p-6">
@@ -185,11 +156,11 @@ const MonthlyDues: React.FC = () => {
                 Recurring Dues
               </h2>
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-white px-3 py-1.5 rounded-xl border border-slate-100">
-                Fixed Monthly • {dues.length} Active
+                Fixed Monthly • {mockDues.length} Active
               </span>
             </div>
             <div className="divide-y divide-slate-50 px-2">
-              {dues.map((due) => (
+              {mockDues.map((due) => (
                 <div key={due.id} className="p-6 flex items-center justify-between hover:bg-slate-50/50 transition-all rounded-2xl group cursor-pointer">
                   <div className="flex items-center gap-6">
                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg transition-all duration-300 ${
@@ -240,7 +211,7 @@ const MonthlyDues: React.FC = () => {
                 Smart Detection
               </h3>
               <p className="text-blue-100/80 text-sm font-medium leading-relaxed relative z-10">
-                Detected 3 potential recurring transactions. Map them as fixed 'Dues'?
+                Detected 2 potential recurring transactions. Map them as fixed 'Dues'?
               </p>
               <div className="mt-6 space-y-3 relative z-10">
                 {[
@@ -275,14 +246,14 @@ const MonthlyDues: React.FC = () => {
               <div className="space-y-3">
                 <div className="flex justify-between text-xs font-black">
                   <span className="text-emerald-800/60 uppercase tracking-widest">Fixed Dues Total:</span>
-                  <span className="text-emerald-900 font-black text-sm">$1,515</span>
+                  <span className="text-emerald-900 font-black text-sm">${fixedDuesTotal.toLocaleString()}</span>
                 </div>
                 <div className="w-full bg-emerald-100 rounded-full h-2.5 overflow-hidden">
-                  <div className="bg-emerald-500 h-full rounded-full transition-all duration-1000" style={{ width: '30.3%' }}></div>
+                  <div className="bg-emerald-500 h-full rounded-full transition-all duration-1000" style={{ width: `${essentialCoveragePercent}%` }}></div>
                 </div>
                 <div className="flex justify-between items-center mt-2">
                    <p className="text-[10px] text-emerald-600 font-black uppercase tracking-tighter">Essential Coverage</p>
-                   <p className="text-[10px] text-emerald-800 font-black">30.3% of Income</p>
+                   <p className="text-[10px] text-emerald-800 font-black">{essentialCoveragePercent.toFixed(1)}% of Income</p>
                 </div>
               </div>
             </section>
