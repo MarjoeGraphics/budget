@@ -12,21 +12,21 @@ function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
-    <div className="bg-slate-50 min-h-screen pb-24 md:pb-0">
+    <div className="bg-slate-50 dark:bg-slate-950 min-h-screen pb-24 md:pb-0 transition-colors duration-300">
       {/* Navigation */}
-      <nav className="bg-white border-b border-slate-100 shadow-sm sticky top-0 z-50">
+      <nav className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 shadow-sm sticky top-0 z-50 transition-colors duration-300">
         <div className="max-w-6xl mx-auto px-4 md:px-6 py-3 md:py-4 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
             <span className="text-2xl text-blue-600">💰</span>
             <span className="text-lg font-bold text-slate-800 tracking-tight text-blue-600">BudgetApp</span>
           </div>
-          <div className="flex gap-1 bg-slate-100 p-1 rounded-xl md:rounded-2xl w-full md:w-auto overflow-x-auto scrollbar-hide">
+          <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl md:rounded-2xl w-full md:w-auto overflow-x-auto scrollbar-hide transition-colors">
             <button
               onClick={() => setActiveTab('dashboard')}
               className={`flex-1 md:flex-none px-4 md:px-6 py-2 rounded-lg md:rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all ${
                 activeTab === 'dashboard'
-                  ? 'bg-white text-blue-600 shadow-md md:shadow-lg shadow-blue-200/50'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-md md:shadow-lg shadow-blue-200/50'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
               Dashboard
@@ -35,8 +35,8 @@ function App() {
               onClick={() => setActiveTab('goals')}
               className={`flex-1 md:flex-none px-4 md:px-6 py-2 rounded-lg md:rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all ${
                 activeTab === 'goals'
-                  ? 'bg-white text-blue-600 shadow-md md:shadow-lg shadow-blue-200/50'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-md md:shadow-lg shadow-blue-200/50'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
               Goals
@@ -45,8 +45,8 @@ function App() {
               onClick={() => setActiveTab('dues')}
               className={`flex-1 md:flex-none px-4 md:px-6 py-2 rounded-lg md:rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all ${
                 activeTab === 'dues'
-                  ? 'bg-white text-blue-600 shadow-md md:shadow-lg shadow-blue-200/50'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-md md:shadow-lg shadow-blue-200/50'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
               Monthly Dues
@@ -55,8 +55,8 @@ function App() {
               onClick={() => setActiveTab('analytics')}
               className={`flex-1 md:flex-none px-4 md:px-6 py-2 rounded-lg md:rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all ${
                 activeTab === 'analytics'
-                  ? 'bg-white text-blue-600 shadow-md md:shadow-lg shadow-blue-200/50'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-md md:shadow-lg shadow-blue-200/50'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
               Analytics
@@ -65,8 +65,8 @@ function App() {
               onClick={() => setActiveTab('settings')}
               className={`flex-1 md:flex-none px-4 md:px-6 py-2 rounded-lg md:rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all ${
                 activeTab === 'settings'
-                  ? 'bg-white text-blue-600 shadow-md md:shadow-lg shadow-blue-200/50'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-md md:shadow-lg shadow-blue-200/50'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
               Settings

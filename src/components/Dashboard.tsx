@@ -10,10 +10,8 @@ import {
 } from 'lucide-react';
 import { motion, useReducedMotion, AnimatePresence } from 'framer-motion';
 import type { Variants } from 'framer-motion';
-import { mockGoals } from '../data/goals';
 import { calculateTotalGoalAllocations } from '../utils/goalUtils';
-import { mockDues, mockIncomes } from '../data/dues';
-import { mockTransactions } from '../data/transactions';
+import { useBudget } from '../context/BudgetContext';
 
 const CountUp: React.FC<{ value: number }> = ({ value }) => {
   const shouldReduceMotion = useReducedMotion();
@@ -49,18 +47,34 @@ const CountUp: React.FC<{ value: number }> = ({ value }) => {
 };
 
 const Dashboard: React.FC = () => {
+  const { transactions, goals, dues, incomes, settings } = useBudget();
+
   // Derived metrics from centralized data
-  const income = useMemo(() => mockIncomes.reduce((sum, inc) => sum + inc.amount, 0), []);
-  const fixedDuesTotal = useMemo(() => mockDues.reduce((sum, due) => sum + due.amount, 0), []);
-  const duesPaidTotal = useMemo(() => mockDues.filter(due => due.isPaid).reduce((sum, due) => sum + due.amount, 0), []);
+  const income = useMemo(() => {
+    // Start with income from context (manually added income transactions)
+    const incomeFromTransactions = transactions
+      .filter(t => t.amount > 0)
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    // Add income from recurring settings (simplified for now, ideally depends on frequency)
+    const recurringIncome = incomes.reduce((sum, inc) => sum + inc.amount, 0);
+
+    // Also consider settings.monthlyRate if set
+    const baseIncome = settings.monthlyRate || 0;
+
+    return incomeFromTransactions + recurringIncome + baseIncome;
+  }, [transactions, incomes, settings]);
+
+  const fixedDuesTotal = useMemo(() => dues.reduce((sum, due) => sum + due.amount, 0), [dues]);
+  const duesPaidTotal = useMemo(() => dues.filter(due => due.isPaid).reduce((sum, due) => sum + due.amount, 0), [dues]);
   const duesLeft = fixedDuesTotal - duesPaidTotal;
 
-  const goalAllocations = useMemo(() => calculateTotalGoalAllocations(mockGoals), []);
+  const goalAllocations = useMemo(() => calculateTotalGoalAllocations(goals), [goals]);
   const safetyBuffer = 500;
 
   const expenses = useMemo(() =>
-    Math.abs(mockTransactions.filter(t => t.amount < 0).reduce((sum, t) => sum + t.amount, 0)),
-  []);
+    Math.abs(transactions.filter(t => t.amount < 0).reduce((sum, t) => sum + t.amount, 0)),
+  [transactions]);
 
   // S = I - (F + G + B)
   const safeToSpend = income - (fixedDuesTotal + goalAllocations + safetyBuffer);
@@ -208,24 +222,28 @@ const Dashboard: React.FC = () => {
             </button>
           </div>
           <div className="space-y-2">
-            {mockTransactions.slice(0, 4).map((tx) => (
-              <div key={tx.id} className="group py-4 flex justify-between items-center border-b border-slate-100/50 dark:border-slate-800/50 last:border-0 hover:bg-white/40 dark:hover:bg-slate-800/40 px-3 -mx-3 rounded-2xl transition-all duration-300">
-                <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-xl shadow-sm ${
-                    tx.amount > 0 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-slate-500/10 text-slate-600 dark:text-slate-400'
-                  }`}>
-                    {tx.description[0]}
+            {transactions.length === 0 ? (
+              <p className="text-center py-10 text-slate-400 font-bold">No recent activity</p>
+            ) : (
+              transactions.slice(0, 4).map((tx) => (
+                <div key={tx.id} className="group py-4 flex justify-between items-center border-b border-slate-100/50 dark:border-slate-800/50 last:border-0 hover:bg-white/40 dark:hover:bg-slate-800/40 px-3 -mx-3 rounded-2xl transition-all duration-300">
+                  <div className="flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-xl shadow-sm ${
+                      tx.amount > 0 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-slate-500/10 text-slate-600 dark:text-slate-400'
+                    }`}>
+                      {tx.description[0]}
+                    </div>
+                    <div>
+                      <p className="font-black text-slate-800 dark:text-white group-hover:text-blue-600 transition-colors">{tx.description}</p>
+                      <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5">{tx.date} • {tx.category}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-black text-slate-800 dark:text-white group-hover:text-blue-600 transition-colors">{tx.description}</p>
-                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5">{tx.date} • {tx.category}</p>
-                  </div>
+                  <span className={`font-black text-xl tracking-tight ${tx.amount > 0 ? 'text-emerald-500' : 'text-slate-800 dark:text-slate-200'}`}>
+                    {tx.amount > 0 ? '+' : ''}{tx.amount.toFixed(2)}
+                  </span>
                 </div>
-                <span className={`font-black text-xl tracking-tight ${tx.amount > 0 ? 'text-emerald-500' : 'text-slate-800 dark:text-slate-200'}`}>
-                  {tx.amount > 0 ? '+' : ''}{tx.amount.toFixed(2)}
-                </span>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </motion.section>
 

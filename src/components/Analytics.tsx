@@ -18,28 +18,28 @@ import {
   Layers,
   ArrowUpRight
 } from 'lucide-react';
-import { mockTransactions } from '../data/transactions';
-import { mockDues, mockIncomes, initialBalance } from '../data/dues';
+import { useBudget } from '../context/BudgetContext';
 
 const Analytics: React.FC = () => {
+  const { transactions, dues, incomes } = useBudget();
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
   // 1. Cumulative Balance Data (Partial Sum Series)
   const cumulativeData = useMemo(() => {
     const data = [];
-    let currentTotal = initialBalance;
+    let currentTotal = 0; // Starting from 0 now as we use real data
     const daysInMonth = 30;
 
     for (let day = 1; day <= daysInMonth; day++) {
-      const dailyIncome = mockIncomes
+      const dailyIncome = incomes
         .filter(inc => inc.dayOfMonth === day)
         .reduce((sum, inc) => sum + inc.amount, 0);
 
-      const dailyDues = mockDues
+      const dailyDues = dues
         .filter(due => due.dayOfMonth === day)
         .reduce((sum, due) => sum + due.amount, 0);
 
-      const dailyTransactions = mockTransactions
+      const dailyTransactions = transactions
         .filter(tx => {
           const txDay = parseInt(tx.date.split('-')[2]);
           return txDay === day;
@@ -54,7 +54,7 @@ const Analytics: React.FC = () => {
       });
     }
     return data;
-  }, []);
+  }, [transactions, dues, incomes]);
 
   // 2. Monthly Income vs Spending (Simplified for Demo)
   const comparisonData = [
@@ -77,7 +77,7 @@ const Analytics: React.FC = () => {
     const list: Anomaly[] = [];
     // Duplicate subscriptions check
     const counts: Record<string, number[]> = {};
-    mockTransactions.forEach(tx => {
+    transactions.forEach(tx => {
       const key = `${tx.description}-${Math.abs(tx.amount)}`;
       if (!counts[key]) counts[key] = [];
       counts[key].push(tx.id);
@@ -98,7 +98,7 @@ const Analytics: React.FC = () => {
     });
 
     // Unusual spending spikes (> $500)
-    mockTransactions.filter(tx => tx.amount < -500).forEach(tx => {
+    transactions.filter(tx => tx.amount < -500).forEach(tx => {
       list.push({
         type: 'spike',
         title: `Spending Spike: ${tx.description}`,
@@ -110,13 +110,14 @@ const Analytics: React.FC = () => {
     });
 
     return list;
-  }, []);
+  }, [transactions]);
 
   // 4. Spending Velocity
   const totalDiscretionaryBudget = 2000;
-  const daysPassed = 26; // Mock "today" as Oct 26
-  const discretionarySpent = Math.abs(mockTransactions.filter(tx => tx.amount < 0 && tx.category !== 'Housing' && tx.category !== 'Utilities').reduce((sum, tx) => sum + tx.amount, 0));
-  const velocity = discretionarySpent / daysPassed;
+  const today = new Date();
+  const daysPassed = today.getDate();
+  const discretionarySpent = Math.abs(transactions.filter(tx => tx.amount < 0 && tx.category !== 'Housing' && tx.category !== 'Utilities').reduce((sum, tx) => sum + tx.amount, 0));
+  const velocity = daysPassed > 0 ? discretionarySpent / daysPassed : 0;
   const projectedTotal = velocity * 30;
   const isOverBudget = projectedTotal > totalDiscretionaryBudget;
 
