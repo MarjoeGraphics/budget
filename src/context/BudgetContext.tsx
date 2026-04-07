@@ -10,6 +10,14 @@ interface Preset {
   icon: string;
 }
 
+export interface CustomGoalType {
+  id: string;
+  label: string;
+  baseType: 'someday' | 'monthly' | 'deadline' | 'reserve';
+  icon: string;
+  color: string;
+}
+
 interface UserSettings {
   darkMode: boolean;
   incomeFrequency: 'daily' | 'weekly' | 'monthly';
@@ -17,6 +25,7 @@ interface UserSettings {
   dailyRate?: number;
   weeklyRate?: number;
   monthlyRate?: number;
+  customGoalTypes: CustomGoalType[];
 }
 
 interface BudgetContextType {
@@ -53,6 +62,7 @@ const DEFAULT_SETTINGS: UserSettings = {
   incomeFrequency: 'monthly',
   restDays: [0], // Sunday
   monthlyRate: 0,
+  customGoalTypes: [],
 };
 
 export const BudgetProvider: React.FC<{ children: ReactNode }> = ({ children }) => {

@@ -34,7 +34,8 @@ const MonthlyDues: React.FC = () => {
   const dailyProjections = useMemo(() => {
     const projections = [];
     let currentBalance = 0; // Starting from 0 now
-    const daysInMonth = 30;
+    const now = new Date();
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
 
     for (let day = 1; day <= daysInMonth; day++) {
       const dailyIncome = incomes
@@ -115,7 +116,14 @@ const MonthlyDues: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-10 gap-2 md:gap-4">
+          <div className="grid grid-cols-7 gap-2 md:gap-4">
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
+              <div key={d} className="text-center text-[10px] font-black text-slate-400 uppercase tracking-widest pb-2">{d}</div>
+            ))}
+            {/* Calendar Padding (Simulated for this month) */}
+            {Array.from({ length: new Date(new Date().getFullYear(), new Date().getMonth(), 1).getDay() }).map((_, i) => (
+              <div key={`pad-${i}`} className="p-3 md:p-4 opacity-0" />
+            ))}
             {dailyProjections.map((proj) => (
               <div
                 key={proj.day}
@@ -124,28 +132,20 @@ const MonthlyDues: React.FC = () => {
                     ? 'border-blue-500 bg-blue-50/30'
                     : proj.isCrunchDay
                     ? 'bg-rose-50 border-rose-200 shadow-sm ring-1 ring-rose-300/10'
-                    : 'bg-white border-slate-50 hover:border-blue-100 hover:shadow-xl hover:shadow-slate-100 hover:-translate-y-1'
+                    : 'bg-white dark:bg-slate-800 border-slate-50 dark:border-slate-700 hover:border-blue-100 dark:hover:border-blue-900 hover:shadow-xl hover:-translate-y-1'
                 }`}
               >
                 <span className={`text-[10px] font-black uppercase tracking-tighter ${
                   proj.day === today ? 'text-blue-600' : proj.isCrunchDay ? 'text-rose-500' : 'text-slate-400 group-hover:text-blue-400 transition-colors'
                 }`}>
-                  Day {proj.day} {proj.day === today && '(Today)'}
+                  {proj.day}
                 </span>
-                <span className={`block text-base md:text-lg font-black mt-1 md:mt-2 leading-none ${proj.isCrunchDay ? 'text-rose-700' : 'text-slate-800 dark:text-slate-200'}`}>
+                <span className={`block text-xs md:text-sm font-black mt-1 leading-none ${proj.isCrunchDay ? 'text-rose-700' : 'text-slate-800 dark:text-slate-200'}`}>
                   ${Math.round(proj.balance)}
                 </span>
-                <div className="flex gap-1 mt-3 h-4">
-                  {proj.income > 0 && (
-                    <span className="px-1.5 py-0.5 bg-emerald-500 text-white text-[8px] font-black rounded-lg flex items-center shadow-sm shadow-emerald-100">
-                      IN
-                    </span>
-                  )}
-                  {proj.expenses > 0 && (
-                    <span className="px-1.5 py-0.5 bg-blue-500 text-white text-[8px] font-black rounded-lg flex items-center shadow-sm shadow-blue-100">
-                      OUT
-                    </span>
-                  )}
+                <div className="flex gap-1 mt-2 h-3 overflow-hidden">
+                  {proj.income > 0 && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" title="Income" />}
+                  {proj.expenses > 0 && <div className="w-1.5 h-1.5 rounded-full bg-blue-500" title="Due" />}
                 </div>
               </div>
             ))}
@@ -199,7 +199,16 @@ const MonthlyDues: React.FC = () => {
                         <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-tighter">{due.category}</p>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between md:justify-end w-full md:w-auto gap-4 md:gap-8">
+                    <div className="flex items-center justify-between md:justify-end w-full md:w-auto gap-4 md:gap-8 flex-1">
+                      <div className="flex-1 max-w-[200px] hidden md:block">
+                        <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-blue-500 transition-all duration-1000"
+                            style={{ width: `${Math.min((monthlyIncome > 0 ? (due.amount / monthlyIncome) * 100 : 0), 100)}%` }}
+                          />
+                        </div>
+                        <p className="text-[8px] font-black text-slate-400 uppercase mt-1">Impact: {((due.amount / (monthlyIncome || 1)) * 100).toFixed(1)}% of income</p>
+                      </div>
                       <div className="text-left md:text-right">
                         <p className="font-black text-slate-800 dark:text-white text-base md:text-lg">${due.amount}</p>
                         <div className="flex items-center gap-1.5 justify-end">
@@ -223,7 +232,10 @@ const MonthlyDues: React.FC = () => {
               )}
             </div>
             <div className="p-4 bg-slate-50/30">
-              <button className="w-full py-4 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 font-bold text-sm hover:border-blue-300 hover:text-blue-400 transition-all flex items-center justify-center gap-2">
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="w-full py-4 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 font-bold text-sm hover:border-blue-300 hover:text-blue-400 transition-all flex items-center justify-center gap-2"
+              >
                 <PlusCircle size={16} />
                 Add Custom Fixed Due
               </button>

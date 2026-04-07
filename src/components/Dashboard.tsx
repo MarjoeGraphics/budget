@@ -46,6 +46,32 @@ const CountUp: React.FC<{ value: number }> = ({ value }) => {
   return <>{displayValue.toLocaleString()}</>;
 };
 
+const Tooltip: React.FC<{ text: string; children: React.ReactNode }> = ({ text, children }) => {
+  const [isVisible, setIsVisible] = useState(false);
+  return (
+    <div
+      className="relative flex-1 min-w-[100px]"
+      onMouseEnter={() => setIsVisible(true)}
+      onMouseLeave={() => setIsVisible(false)}
+    >
+      {children}
+      <AnimatePresence>
+        {isVisible && (
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900 dark:bg-slate-800 text-white text-[10px] font-bold rounded-lg shadow-xl z-50 w-48 text-center pointer-events-none border border-slate-700/50"
+          >
+            {text}
+            <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-900 dark:border-t-slate-800" />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
 const Dashboard: React.FC = () => {
   const { transactions, goals, dues, incomes, settings } = useBudget();
 
@@ -108,10 +134,10 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const glassStyle = "bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl border border-white/20 dark:border-slate-800/50 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] rounded-[20px]";
+  const glassStyle = "bg-card/70 dark:bg-card/70 backdrop-blur-2xl border border-white/20 dark:border-slate-800/50 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] rounded-[20px]";
 
   return (
-    <div className="p-4 md:p-6 min-h-screen bg-slate-50/50 dark:bg-slate-950/50 transition-colors duration-500">
+    <div className="p-4 md:p-6 min-h-screen bg-background/50 dark:bg-background/50 transition-colors duration-500">
       <motion.div
         layout
         className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 grid-rows-auto gap-4 md:gap-6"
@@ -162,15 +188,17 @@ const Dashboard: React.FC = () => {
 
             <div className="mt-8 md:mt-12 flex flex-wrap gap-2 md:gap-4">
               {[
-                { label: 'Income', val: income, sign: '+' },
-                { label: 'Dues', val: fixedDuesTotal, sign: '-' },
-                { label: 'Goals', val: goalAllocations, sign: '-' },
-                { label: 'Buffer', val: safetyBuffer, sign: '-' }
+                { label: 'Income', val: income, sign: '+', tip: 'Your total expected earnings this month including base rate and extra income.' },
+                { label: 'Dues', val: fixedDuesTotal, sign: '-', tip: 'Recurring fixed costs like rent and bills that must be covered.' },
+                { label: 'Goals', val: goalAllocations, sign: '-', tip: 'Monthly contributions set aside for your financial ambitions and savings.' },
+                { label: 'Buffer', val: safetyBuffer, sign: '-', tip: 'A safety net for unexpected small expenses to keep your budget on track.' }
               ].map((item, i) => (
-                <div key={i} className="flex-1 min-w-[100px] bg-white/10 backdrop-blur-xl px-3 md:px-5 py-2 md:py-3 rounded-2xl flex flex-col gap-0 md:gap-1 border border-white/10 hover:bg-white/20 transition-colors">
-                  <span className="text-blue-200 text-[8px] md:text-[10px] uppercase font-black tracking-widest">{item.label}</span>
-                  <span className="font-black text-sm md:text-lg">{item.sign}${item.val.toLocaleString()}</span>
-                </div>
+                <Tooltip key={i} text={item.tip}>
+                  <div className="w-full bg-white/10 backdrop-blur-xl px-3 md:px-5 py-2 md:py-3 rounded-2xl flex flex-col gap-0 md:gap-1 border border-white/10 hover:bg-white/20 transition-colors h-full">
+                    <span className="text-blue-200 text-[8px] md:text-[10px] uppercase font-black tracking-widest">{item.label}</span>
+                    <span className="font-black text-sm md:text-lg">{item.sign}${item.val.toLocaleString()}</span>
+                  </div>
+                </Tooltip>
               ))}
             </div>
           </header>
@@ -178,10 +206,10 @@ const Dashboard: React.FC = () => {
 
         {/* Summary Cards - Grid Integration */}
         {[
-          { label: 'Monthly Income', value: income, color: 'text-emerald-500', icon: ArrowUpCircle, bg: 'bg-emerald-500/10' },
-          { label: 'Expenses', value: expenses, color: 'text-slate-600 dark:text-slate-400', icon: ArrowDownCircle, bg: 'bg-slate-500/10' },
-          { label: 'Dues Left', value: duesLeft, color: 'text-blue-500', icon: Target, bg: 'bg-blue-500/10' },
-          { label: 'Net Saving', value: netSaving, color: netSaving >= 0 ? 'text-emerald-500' : 'text-rose-500', icon: TrendingUp, bg: netSaving >= 0 ? 'bg-emerald-500/10' : 'bg-rose-500/10' }
+          { label: 'Monthly Income', value: income, color: 'text-income', icon: ArrowUpCircle, bg: 'bg-income/10' },
+          { label: 'Expenses', value: expenses, color: 'text-foreground/70', icon: ArrowDownCircle, bg: 'bg-slate-500/10' },
+          { label: 'Dues Left', value: duesLeft, color: 'text-due', icon: Target, bg: 'bg-due/10' },
+          { label: 'Net Saving', value: netSaving, color: netSaving >= 0 ? 'text-income' : 'text-due', icon: TrendingUp, bg: netSaving >= 0 ? 'bg-income/10' : 'bg-due/10' }
         ].map((card, idx) => (
           <motion.div
             layout
@@ -257,7 +285,7 @@ const Dashboard: React.FC = () => {
             variants={cardVariants}
             initial="hidden"
             animate="visible"
-            className={`p-6 md:p-8 relative overflow-hidden bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-[20px] shadow-xl shadow-emerald-500/10`}
+            className={`p-6 md:p-8 relative overflow-hidden bg-gradient-to-br from-income to-emerald-600 text-white rounded-[20px] shadow-xl shadow-emerald-500/10`}
           >
             <div className="absolute -right-6 -bottom-6 text-white/10 rotate-12">
               <Lightbulb size={160} />
@@ -307,8 +335,8 @@ const Dashboard: React.FC = () => {
             </div>
             <div className="space-y-6">
               {[
-                { label: 'Essentials', current: 45, color: 'bg-blue-500', track: 'bg-blue-500/10', text: 'text-blue-500' },
-                { label: 'Long-term Goals', current: 20, color: 'bg-emerald-500', track: 'bg-emerald-500/10', text: 'text-emerald-500' }
+                { label: 'Essentials', current: 45, color: 'bg-due', track: 'bg-due/10', text: 'text-due' },
+                { label: 'Long-term Goals', current: 20, color: 'bg-goal', track: 'bg-goal/10', text: 'text-goal' }
               ].map((stat, i) => (
                 <div key={i}>
                   <div className="flex justify-between text-[10px] mb-2">

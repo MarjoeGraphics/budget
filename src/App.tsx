@@ -12,9 +12,9 @@ function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
-    <div className="bg-slate-50 dark:bg-slate-950 min-h-screen pb-24 md:pb-0 transition-colors duration-300">
+    <div className="bg-background dark:bg-background min-h-screen pb-24 md:pb-0 transition-colors duration-300">
       {/* Navigation */}
-      <nav className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 shadow-sm sticky top-0 z-50 transition-colors duration-300">
+      <nav className="bg-card dark:bg-card border-b border-slate-100 dark:border-slate-800 shadow-sm sticky top-0 z-50 transition-colors duration-300">
         <div className="max-w-6xl mx-auto px-4 md:px-6 py-3 md:py-4 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
             <span className="text-2xl text-blue-600">💰</span>

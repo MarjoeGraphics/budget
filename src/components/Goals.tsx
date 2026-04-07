@@ -21,21 +21,35 @@ const TYPE_CONFIG: Record<GoalType, { label: string; icon: LucideIcon; bg: strin
 };
 
 const Goals: React.FC = () => {
-  const { goals, addGoal, deleteGoal } = useBudget();
+  const { goals, addGoal, deleteGoal, settings } = useBudget();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newGoal, setNewGoal] = useState<Omit<Goal, 'id'>>({
     title: '',
     target: 0,
     current: 0,
     type: 'someday',
-    icon: 'Plane'
+    icon: 'Plane',
+    imageUrl: ''
   });
 
   const handleAddGoal = (e: React.FormEvent) => {
     e.preventDefault();
     addGoal(newGoal as Goal);
     setIsModalOpen(false);
-    setNewGoal({ title: '', target: 0, current: 0, type: 'someday', icon: 'Plane' });
+    setNewGoal({ title: '', target: 0, current: 0, type: 'someday', icon: 'Plane', imageUrl: '' });
+  };
+
+  const getTypeConfig = (goal: Goal) => {
+    const customType = settings.customGoalTypes.find(t => t.id === goal.type);
+    if (customType) {
+      return {
+        label: customType.label,
+        icon: ICON_MAP[customType.icon] || PiggyBank,
+        bg: 'bg-slate-50',
+        text: 'text-slate-600'
+      };
+    }
+    return TYPE_CONFIG[goal.type] || TYPE_CONFIG.someday;
   };
 
   return (
@@ -70,17 +84,26 @@ const Goals: React.FC = () => {
         ) : (
           goals.map((goal) => {
             const Icon = ICON_MAP[goal.icon || ''] || Info;
-            const TypeInfo = TYPE_CONFIG[goal.type];
+            const TypeInfo = getTypeConfig(goal);
             const allocation = calculateGoalAllocation(goal);
             const percentage = calculateGoalPercentage(goal);
 
             return (
-              <div key={goal.id} className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-[1.5rem] md:rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-blue-100 dark:hover:border-blue-900/50 transition-all group relative">
-                <div className="flex justify-between items-start mb-6">
+              <div key={goal.id} className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-[1.5rem] md:rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-blue-100 dark:hover:border-blue-900/50 transition-all group relative overflow-hidden">
+                {goal.imageUrl && (
+                  <div className="absolute inset-0 z-0 opacity-10">
+                    <img src={goal.imageUrl} alt="" className="w-full h-full object-cover" />
+                  </div>
+                )}
+                <div className="flex justify-between items-start mb-6 relative z-10">
                   <div className="flex gap-3 md:gap-4 items-center">
-                    <div className={`p-3 md:p-4 rounded-xl md:rounded-2xl ${TypeInfo.bg} ${TypeInfo.text} dark:bg-slate-800 group-hover:scale-110 transition-transform`}>
-                      <Icon className="w-5 h-5 md:w-6 md:h-6" strokeWidth={2.5} />
-                    </div>
+                    {goal.imageUrl ? (
+                      <img src={goal.imageUrl} className="w-12 h-12 md:w-16 md:h-16 rounded-xl object-cover shadow-md" alt={goal.title} />
+                    ) : (
+                      <div className={`p-3 md:p-4 rounded-xl md:rounded-2xl ${TypeInfo.bg} ${TypeInfo.text} dark:bg-slate-800 group-hover:scale-110 transition-transform`}>
+                        <Icon className="w-5 h-5 md:w-6 md:h-6" strokeWidth={2.5} />
+                      </div>
+                    )}
                     <div>
                       <h3 className="font-black text-slate-800 dark:text-white text-lg md:text-xl tracking-tight">{goal.title}</h3>
                       <div className="flex items-center gap-1.5 mt-1">
@@ -204,6 +227,16 @@ const Goals: React.FC = () => {
                       className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-2xl py-4 px-6 font-bold text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 mt-1 transition-colors"
                     />
                   </div>
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Goal Image URL (Optional)</label>
+                    <input
+                      type="url"
+                      placeholder="https://images.unsplash.com/..."
+                      value={newGoal.imageUrl}
+                      onChange={e => setNewGoal({...newGoal, imageUrl: e.target.value})}
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-2xl py-4 px-6 font-bold text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 mt-1 transition-colors"
+                    />
+                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Target Amount</label>
@@ -245,6 +278,9 @@ const Goals: React.FC = () => {
                       <option value="monthly">Monthly Top-up (Fixed monthly)</option>
                       <option value="deadline">Time Bound (By specific date)</option>
                       <option value="reserve">Reserve Floor (Emergency Fund)</option>
+                      {settings.customGoalTypes.map(type => (
+                        <option key={type.id} value={type.id}>{type.label}</option>
+                      ))}
                     </select>
                   </div>
 

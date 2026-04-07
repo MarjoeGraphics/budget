@@ -8,6 +8,7 @@ export interface BaseGoal {
   target: number;
   icon?: string;
   color?: string;
+  imageUrl?: string;
 }
 
 export interface SomedayGoal extends BaseGoal {
