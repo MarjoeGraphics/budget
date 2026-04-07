@@ -1,28 +1,21 @@
 import React, { useState } from 'react';
 import { X, Plus, Sparkles, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useBudget } from '../context/BudgetContext';
 
 interface AddTransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const PRESETS = [
-  { label: 'Coffee', amount: -5, category: 'Food', icon: '☕' },
-  { label: 'Groceries', amount: -60, category: 'Food', icon: '🛒' },
-  { label: 'Gas/Fuel', amount: -40, category: 'Transport', icon: '⛽' },
-  { label: 'Dinner Out', amount: -35, category: 'Food', icon: '🍽️' },
-  { label: 'Gig Income', amount: 150, category: 'Income', icon: '💰' },
-  { label: 'Subscription', amount: -15, category: 'Entertainment', icon: '📺' },
-];
-
 const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen, onClose }) => {
+  const { addTransaction, presets } = useBudget();
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('Food');
   const [type, setType] = useState<'expense' | 'income'>('expense');
 
-  const handlePreset = (preset: typeof PRESETS[0]) => {
+  const handlePreset = (preset: typeof presets[0]) => {
     setDescription(preset.label);
     setAmount(Math.abs(preset.amount).toString());
     setCategory(preset.category);
@@ -31,8 +24,16 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen, onClo
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, we'd dispatch an action here
-    console.log({ description, amount: type === 'expense' ? -Number(amount) : Number(amount), category, date: new Date().toISOString().split('T')[0] });
+    addTransaction({
+      description,
+      amount: type === 'expense' ? -Number(amount) : Number(amount),
+      category,
+      date: new Date().toISOString().split('T')[0]
+    });
+
+    // Reset form
+    setDescription('');
+    setAmount('');
     onClose();
   };
 
@@ -53,7 +54,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen, onClo
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-t-[2.5rem] md:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-t-[2.5rem] md:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] transition-colors"
           >
             {/* Header */}
             <div className="p-6 md:p-8 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
@@ -69,7 +70,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen, onClo
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-8 scrollbar-hide">
+            <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-8 scrollbar-hide dark:bg-slate-900 transition-colors">
               {/* Presets Section */}
               <section>
                 <div className="flex items-center gap-2 mb-4">
@@ -77,7 +78,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen, onClo
                   <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Quick Presets</h3>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {PRESETS.map((preset, i) => (
+                  {presets.map((preset, i) => (
                     <button
                       key={i}
                       onClick={() => handlePreset(preset)}
