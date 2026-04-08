@@ -196,7 +196,14 @@ const MonthlyDues: React.FC = () => {
                       </div>
                       <div>
                         <p className="font-black text-slate-800 dark:text-white text-base md:text-lg tracking-tight group-hover:text-blue-600 transition-colors">{due.name}</p>
-                        <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-tighter">{due.category}</p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-tighter">{due.category}</p>
+                          {due.dayOfMonth > today && !due.isPaid && (
+                            <span className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-md">
+                              Save ${(due.amount / (due.dayOfMonth - today)).toFixed(2)} / day
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center justify-between md:justify-end w-full md:w-auto gap-4 md:gap-8 flex-1">

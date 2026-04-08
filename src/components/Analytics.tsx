@@ -97,8 +97,8 @@ const Analytics: React.FC = () => {
       }
     });
 
-    // Unusual spending spikes (> $500)
-    transactions.filter(tx => tx.amount < -500).forEach(tx => {
+    // Unusual spending spikes (> $500) - exclude known bills
+    transactions.filter(tx => tx.amount < -500 && tx.category !== 'Bills/Dues').forEach(tx => {
       list.push({
         type: 'spike',
         title: `Spending Spike: ${tx.description}`,
