@@ -1,73 +1,47 @@
-# React + TypeScript + Vite
+# BudgetApp - Financial Planning & Tracking
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern budgeting application built with React, TypeScript, and Framer Motion.
 
-Currently, two official plugins are available:
+## Core Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Dynamic Safe to Spend**: Formula: `Projected Income - (Fixed Dues + Goal Allocations + Safety Buffer) - Current Discretionary Spending`.
+- **Goals with Visuals**: Track financial ambitions with progress bars and hero images.
+- **Cashflow Calendar**: Predict "crunch periods" where balance dips below a safety threshold.
+- **Smart Analytics**: Automated anomaly detection and spending velocity tracking.
+- **Privacy First**: Local-only storage with optional AES-256 encryption.
 
-## React Compiler
+## How to Test Logic
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+The app's logic relies on the current date and stored transactions/settings. To test different scenarios:
 
-## Expanding the ESLint configuration
+### 1. Simulating Income from Different Dates
+The app uses a **Projected Income** model for the "Safe to Spend" metric, which is set in the **Settings** tab (**Monthly Rate**).
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+To test actual income receipt:
+1. Open the **Add Transaction** modal (`+` button).
+2. Select **Income**.
+3. Add a description (e.g., "Payday") and amount.
+4. The **Net Saving** / **Current Savings** metric will update to reflect this actual inflow.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### 2. Testing Budget Math
+- **Safe to Spend**: Subtracts all **discretionary** expenses (all negative transactions EXCEPT those categorized as `Bills/Dues`) from your monthly allowance.
+- **Bills/Dues**: To test, mark a transaction as `Bills/Dues`. It will *not* reduce your "Safe to Spend" because it's already accounted for in the "Dues" reservation.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### 3. Testing Crunch Days
+1. Go to **Settings** and set a **Monthly Rate** (e.g., $3000).
+2. Go to **Monthly Dues** and add a large due (e.g., $2800) on the 5th of the month.
+3. Observe the **Payday Cashflow Calendar**. Days 5 through the end of the month will likely be flagged as **Crunch Days** (indicated in red) because the projected balance falls below $500.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 4. Testing Savings Requirements
+1. Add a **Recurring Due** in the future (e.g., $300 due on the 25th).
+2. The list item will display a badge: `Save $X / day`.
+3. This calculation is `Amount / (DueDay - Today)`. If today is the 10th, it will show $20/day ($300 / 15 days).
+
+## Development
+
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+The app will be available at `http://localhost:3000`.

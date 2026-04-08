@@ -73,23 +73,22 @@ const Tooltip: React.FC<{ text: string; children: React.ReactNode }> = ({ text, 
 };
 
 const Dashboard: React.FC = () => {
-  const { transactions, goals, dues, incomes, settings } = useBudget();
+  const { transactions, goals, dues, settings } = useBudget();
 
   // Derived metrics from centralized data
-  const income = useMemo(() => {
-    // Start with income from context (manually added income transactions)
-    const incomeFromTransactions = transactions
+  const projectedMonthlyIncome = useMemo(() => {
+    return settings.monthlyRate || 0;
+  }, [settings.monthlyRate]);
+
+  // Actual income received this month (from transactions)
+  const actualIncomeReceived = useMemo(() => {
+    return transactions
       .filter(t => t.amount > 0)
       .reduce((sum, t) => sum + t.amount, 0);
+  }, [transactions]);
 
-    // Add income from recurring settings (simplified for now, ideally depends on frequency)
-    const recurringIncome = incomes.reduce((sum, inc) => sum + inc.amount, 0);
-
-    // Also consider settings.monthlyRate if set
-    const baseIncome = settings.monthlyRate || 0;
-
-    return incomeFromTransactions + recurringIncome + baseIncome;
-  }, [transactions, incomes, settings]);
+  // Total Income to use for calculations (Projected)
+  const income = projectedMonthlyIncome;
 
   const fixedDuesTotal = useMemo(() => dues.reduce((sum, due) => sum + due.amount, 0), [dues]);
   const duesPaidTotal = useMemo(() => dues.filter(due => due.isPaid).reduce((sum, due) => sum + due.amount, 0), [dues]);
@@ -98,13 +97,22 @@ const Dashboard: React.FC = () => {
   const goalAllocations = useMemo(() => calculateTotalGoalAllocations(goals), [goals]);
   const safetyBuffer = 500;
 
-  const expenses = useMemo(() =>
+  const discretionaryExpenses = useMemo(() =>
+    Math.abs(transactions.filter(t => t.amount < 0 && t.category !== 'Bills/Dues').reduce((sum, t) => sum + t.amount, 0)),
+  [transactions]);
+
+  // Total Expenses (everything going out)
+  const totalExpenses = useMemo(() =>
     Math.abs(transactions.filter(t => t.amount < 0).reduce((sum, t) => sum + t.amount, 0)),
   [transactions]);
 
-  // S = I - (F + G + B)
-  const safeToSpend = income - (fixedDuesTotal + goalAllocations + safetyBuffer);
-  const netSaving = income - expenses - fixedDuesTotal;
+  // S = I - (F + G + B) - DiscretionaryExpenses
+  // Fixed Dues and Goal Allocations are reserved.
+  // Safe to Spend is what remains from the income after reservations AND what you've already spent discretionarily.
+  const safeToSpend = income - (fixedDuesTotal + goalAllocations + safetyBuffer) - discretionaryExpenses;
+
+  // Net Saving is Income - Total Outflow
+  const netSaving = actualIncomeReceived - totalExpenses;
 
   const tips = [
     "50/30/20 Rule: Allocate 50% to needs, 30% to wants, and 20% to savings.",
@@ -206,10 +214,10 @@ const Dashboard: React.FC = () => {
 
         {/* Summary Cards - Grid Integration */}
         {[
-          { label: 'Monthly Income', value: income, color: 'text-income', icon: ArrowUpCircle, bg: 'bg-income/10' },
-          { label: 'Expenses', value: expenses, color: 'text-foreground/70', icon: ArrowDownCircle, bg: 'bg-slate-500/10' },
+          { label: 'Projected Income', value: income, color: 'text-income', icon: ArrowUpCircle, bg: 'bg-income/10' },
+          { label: 'Discretionary', value: discretionaryExpenses, color: 'text-foreground/70', icon: ArrowDownCircle, bg: 'bg-slate-500/10' },
           { label: 'Dues Left', value: duesLeft, color: 'text-due', icon: Target, bg: 'bg-due/10' },
-          { label: 'Net Saving', value: netSaving, color: netSaving >= 0 ? 'text-income' : 'text-due', icon: TrendingUp, bg: netSaving >= 0 ? 'bg-income/10' : 'bg-due/10' }
+          { label: 'Current Savings', value: netSaving, color: netSaving >= 0 ? 'text-income' : 'text-due', icon: TrendingUp, bg: netSaving >= 0 ? 'bg-income/10' : 'bg-due/10' }
         ].map((card, idx) => (
           <motion.div
             layout

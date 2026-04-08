@@ -150,7 +150,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen, onClo
                       onChange={(e) => setCategory(e.target.value)}
                       className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl py-4 px-6 text-sm font-black text-slate-800 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-500/10 appearance-none"
                     >
-                      {['Food', 'Transport', 'Entertainment', 'Shopping', 'Utilities', 'Income'].map(cat => (
+                      {['Food', 'Transport', 'Entertainment', 'Shopping', 'Utilities', 'Income', 'Bills/Dues'].map(cat => (
                         <option key={cat} value={cat}>{cat}</option>
                       ))}
                     </select>

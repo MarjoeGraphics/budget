@@ -89,17 +89,18 @@ const Goals: React.FC = () => {
             const percentage = calculateGoalPercentage(goal);
 
             return (
-              <div key={goal.id} className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-[1.5rem] md:rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-blue-100 dark:hover:border-blue-900/50 transition-all group relative overflow-hidden">
+              <div key={goal.id} className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-blue-100 dark:hover:border-blue-900/50 transition-all group relative overflow-hidden flex flex-col">
                 {goal.imageUrl && (
-                  <div className="absolute inset-0 z-0 opacity-10">
-                    <img src={goal.imageUrl} alt="" className="w-full h-full object-cover" />
+                  <div className="h-48 md:h-64 overflow-hidden relative">
+                    <img src={goal.imageUrl} alt={goal.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-slate-900 via-transparent to-transparent opacity-60" />
                   </div>
                 )}
-                <div className="flex justify-between items-start mb-6 relative z-10">
+
+                <div className="p-6 md:p-8 flex-1 flex flex-col">
+                <div className="flex justify-between items-start mb-6">
                   <div className="flex gap-3 md:gap-4 items-center">
-                    {goal.imageUrl ? (
-                      <img src={goal.imageUrl} className="w-12 h-12 md:w-16 md:h-16 rounded-xl object-cover shadow-md" alt={goal.title} />
-                    ) : (
+                    {!goal.imageUrl && (
                       <div className={`p-3 md:p-4 rounded-xl md:rounded-2xl ${TypeInfo.bg} ${TypeInfo.text} dark:bg-slate-800 group-hover:scale-110 transition-transform`}>
                         <Icon className="w-5 h-5 md:w-6 md:h-6" strokeWidth={2.5} />
                       </div>
@@ -129,7 +130,7 @@ const Goals: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-4 mt-auto">
                 <div className="flex justify-between items-end">
                   <div className="space-y-1">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Current Progress</p>
@@ -185,6 +186,7 @@ const Goals: React.FC = () => {
                       </>
                     )}
                   </div>
+                </div>
                 </div>
                 </div>
               </div>
