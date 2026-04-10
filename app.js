@@ -379,3 +379,9 @@ document.getElementById('import-json-input').onchange = (e) => {
 
 // Start
 init();
+
+// Expose functions to window for HTML onclick handlers
+window.markAsPaid = markAsPaid;
+window.deleteDue = deleteDue;
+window.clearTransactions = clearTransactions;
+window.addTransaction = addTransaction;
