@@ -47,6 +47,10 @@ interface BudgetState {
   deletePreset: (id: string) => void
 
   checkAndResetMonthlyDues: () => void
+
+  // Data Management
+  clearAllData: () => void
+  importData: (data: Partial<BudgetState>) => void
 }
 
 export const useBudgetStore = create<BudgetState>()(
@@ -147,7 +151,20 @@ export const useBudgetStore = create<BudgetState>()(
             dues: dues.map(d => ({ ...d, isPaid: false, contributedAmount: 0 }))
           })
         }
-      }
+      },
+
+      clearAllData: () => set({
+        balance: 0,
+        transactions: [],
+        dues: [],
+        presets: [],
+        lastResetMonth: new Date().getMonth()
+      }),
+
+      importData: (data) => set((state) => ({
+        ...state,
+        ...data,
+      })),
     }),
     {
       name: 'budget-store',
