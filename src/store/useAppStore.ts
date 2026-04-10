@@ -33,8 +33,8 @@ export const useAppStore = create<AppState>()(
       setIsModalOpen: (isOpen) => set({ isModalOpen: isOpen }),
     }),
     {
-      name: 'budget-app-storage',
-      partialize: (state) => ({ theme: state.theme }),
+      name: 'budget-app-settings',
+      partialize: (state) => ({ theme: state.theme, activeTab: state.activeTab }),
     }
   )
 )
