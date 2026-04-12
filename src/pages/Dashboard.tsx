@@ -1,18 +1,20 @@
 import React, { useState, useEffect } from 'react'
-import { useBudgetStore } from '../store/useBudgetStore'
-import { Edit2, Check, TrendingUp, TrendingDown, Lightbulb, Target } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { useBudgetStore, type Transaction } from '../store/useBudgetStore'
+import { Edit2, Check, X, TrendingUp, TrendingDown, Lightbulb, Target, Info } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 const Dashboard: React.FC = () => {
   const { balance, transactions, dues, setBalance, checkAndResetMonthlyDues } = useBudgetStore()
 
   const [isEditingBalance, setIsEditingBalance] = useState(false)
   const [editBalanceValue, setEditBalanceValue] = useState(balance.toString())
+  const [isGuideOpen, setIsGuideOpen] = useState(false)
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false)
 
   useEffect(() => {
     checkAndResetMonthlyDues()
     setEditBalanceValue(balance.toString())
-  }, [balance])
+  }, [balance, checkAndResetMonthlyDues])
 
   const handleBalanceUpdate = () => {
     const val = parseFloat(editBalanceValue)
@@ -60,50 +62,61 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Budget Card */}
-      <div className="bg-blue-600 rounded-[2.5rem] p-8 text-white shadow-2xl shadow-blue-500/20 mb-8 relative overflow-hidden">
+      {/* Main Budget Card - STS HERO */}
+      <div className={`rounded-[2.5rem] p-8 text-white shadow-2xl transition-colors duration-500 mb-8 relative overflow-hidden ${
+        isSTSNegative ? 'bg-red-500 shadow-red-500/20' : 'bg-green-600 shadow-green-500/20'
+      }`}>
         <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -mr-20 -mt-20 blur-2xl" />
         <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full -ml-16 -mb-16 blur-2xl" />
 
-        <div className="relative z-10 space-y-8">
-          <div>
-            <p className="text-blue-100 text-[10px] font-black uppercase tracking-[0.2em] mb-2">Total Balance</p>
-            {isEditingBalance ? (
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  value={editBalanceValue}
-                  onChange={(e) => setEditBalanceValue(e.target.value)}
-                  className="bg-white/20 border-none text-3xl font-black text-white rounded-2xl px-3 py-2 w-40 outline-none focus:ring-4 focus:ring-white/20 transition-all"
-                  autoFocus
-                />
-                <button onClick={handleBalanceUpdate} className="p-3 bg-white text-blue-600 rounded-2xl shadow-lg shadow-black/10">
-                  <Check size={20} strokeWidth={3} />
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-4 group">
-                <h2 className="text-5xl font-black tracking-tighter">₱ {balance.toLocaleString()}</h2>
-                <button
-                  onClick={() => setIsEditingBalance(true)}
-                  className="p-2 bg-white/10 rounded-xl opacity-0 group-hover:opacity-100 transition-all hover:bg-white/20"
-                >
-                  <Edit2 size={16} strokeWidth={2.5} />
-                </button>
-              </div>
-            )}
+        <div className="relative z-10 space-y-6">
+          <div className="flex justify-between items-center">
+            <p className="text-white/80 text-[10px] font-black uppercase tracking-[0.2em]">Safe to Spend</p>
+            <button
+              onClick={() => setIsGuideOpen(true)}
+              className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors"
+            >
+              <Info size={16} strokeWidth={2.5} />
+            </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-8 pt-4 border-t border-white/10">
+          <div className="text-center py-2">
+            <h2 className="text-6xl font-black tracking-tighter drop-shadow-lg">
+              ₱ {safeToSpend.toLocaleString()}
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-2 gap-8 pt-6 border-t border-white/10">
             <div>
-              <p className="text-blue-100 text-[10px] font-black uppercase tracking-widest mb-1 opacity-60">Due Left</p>
-              <p className="text-xl font-black">₱ {dueLeft.toLocaleString()}</p>
+              <p className="text-white/60 text-[10px] font-black uppercase tracking-widest mb-1">Total Balance</p>
+              {isEditingBalance ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    value={editBalanceValue}
+                    onChange={(e) => setEditBalanceValue(e.target.value)}
+                    className="bg-white/20 border-none text-sm font-black text-white rounded-lg px-2 py-1 w-24 outline-none focus:ring-2 focus:ring-white/20"
+                    autoFocus
+                  />
+                  <button onClick={handleBalanceUpdate} className="text-white">
+                    <Check size={16} strokeWidth={3} />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 group">
+                  <p className="text-lg font-black">₱ {balance.toLocaleString()}</p>
+                  <button
+                    onClick={() => setIsEditingBalance(true)}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <Edit2 size={12} />
+                  </button>
+                </div>
+              )}
             </div>
             <div>
-              <p className="text-blue-100 text-[10px] font-black uppercase tracking-widest mb-1 opacity-60">Safe to Spend</p>
-              <p className={`text-xl font-black ${isSTSNegative ? 'text-red-300' : 'text-white'}`}>
-                ₱ {safeToSpend.toLocaleString()}
-              </p>
+              <p className="text-white/60 text-[10px] font-black uppercase tracking-widest mb-1">Due Left</p>
+              <p className="text-lg font-black">₱ {dueLeft.toLocaleString()}</p>
             </div>
           </div>
         </div>
@@ -185,7 +198,12 @@ const Dashboard: React.FC = () => {
       <div className="space-y-4">
         <div className="flex justify-between items-center px-1">
           <h3 className="font-black text-gray-400 text-[10px] uppercase tracking-widest">Recent Activity</h3>
-          <p className="text-[10px] font-black text-blue-600 uppercase">View All</p>
+          <button
+            onClick={() => setIsHistoryOpen(true)}
+            className="text-[10px] font-black text-blue-600 uppercase"
+          >
+            View All
+          </button>
         </div>
 
         <div className="space-y-3">
@@ -195,30 +213,107 @@ const Dashboard: React.FC = () => {
             </div>
           ) : (
             transactions.slice(0, 5).map((t) => (
-              <div key={t.id} className="bg-white dark:bg-gray-800 p-5 rounded-3xl flex items-center justify-between border border-gray-50 dark:border-gray-700 shadow-sm active:scale-95 transition-transform">
-                <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
-                    t.type === 'income' ? 'bg-green-100 text-green-600 dark:bg-green-900/30' : 'bg-red-50 text-red-500 dark:bg-red-900/20'
-                  }`}>
-                    {t.type === 'income' ? <TrendingUp size={20} strokeWidth={2.5} /> : <TrendingDown size={20} strokeWidth={2.5} />}
-                  </div>
-                  <div>
-                    <p className="font-black text-sm">{t.label}</p>
-                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-tighter">
-                      {new Date(t.date).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })}
-                    </p>
-                  </div>
-                </div>
-                <p className={`font-black ${t.type === 'income' ? 'text-green-600' : 'text-red-500'}`}>
-                  {t.type === 'income' ? '+' : '-'} ₱ {t.amount.toLocaleString()}
-                </p>
-              </div>
+              <TransactionItem key={t.id} transaction={t} />
             ))
           )}
         </div>
       </div>
+
+      {/* User Guide Modal */}
+      <Modal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} title="What is Safe to Spend?">
+        <div className="space-y-4 text-gray-600 dark:text-gray-400">
+          <p className="font-medium">
+            <span className="font-black text-blue-600">Safe to Spend (STS)</span> is the amount of money you can spend today without worrying about your upcoming bills.
+          </p>
+          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700">
+            <p className="text-xs font-black uppercase text-gray-400 mb-2">Calculation:</p>
+            <p className="font-mono text-sm dark:text-gray-200">Total Balance - Remaining Dues = STS</p>
+          </div>
+          <ul className="space-y-3">
+            <li className="flex gap-3">
+              <div className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 shrink-0" />
+              <p className="text-sm"><span className="font-bold text-gray-900 dark:text-gray-100">Green Status:</span> You're within budget! All your monthly bills are covered by your current balance.</p>
+            </li>
+            <li className="flex gap-3">
+              <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2 shrink-0" />
+              <p className="text-sm"><span className="font-bold text-gray-900 dark:text-gray-100">Red Status:</span> Your current balance is less than your total unpaid dues. Avoid unnecessary spending!</p>
+            </li>
+          </ul>
+        </div>
+      </Modal>
+
+      {/* Transaction History Modal */}
+      <Modal isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} title="Recent Activity">
+        <div className="space-y-3 max-h-[60vh] overflow-y-auto no-scrollbar">
+          {transactions.length === 0 ? (
+            <p className="text-center text-gray-400 py-8">No transactions found.</p>
+          ) : (
+            transactions.map((t) => (
+              <TransactionItem key={t.id} transaction={t} />
+            ))
+          )}
+        </div>
+      </Modal>
     </div>
   )
 }
+
+const TransactionItem: React.FC<{ transaction: Transaction }> = ({ transaction: t }) => (
+  <div className="bg-white dark:bg-gray-800 p-5 rounded-3xl flex items-center justify-between border border-gray-50 dark:border-gray-700 shadow-sm active:scale-95 transition-transform">
+    <div className="flex items-center gap-4">
+      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
+        t.type === 'income' ? 'bg-green-100 text-green-600 dark:bg-green-900/30' : 'bg-red-50 text-red-500 dark:bg-red-900/20'
+      }`}>
+        {t.type === 'income' ? <TrendingUp size={20} strokeWidth={2.5} /> : <TrendingDown size={20} strokeWidth={2.5} />}
+      </div>
+      <div>
+        <p className="font-black text-sm">{t.label}</p>
+        <p className="text-[10px] text-gray-400 font-black uppercase tracking-tighter">
+          {new Date(t.date).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })}
+        </p>
+      </div>
+    </div>
+    <p className={`font-black ${t.type === 'income' ? 'text-green-600' : 'text-red-500'}`}>
+      {t.type === 'income' ? '+' : '-'} ₱ {t.amount.toLocaleString()}
+    </p>
+  </div>
+)
+
+const Modal: React.FC<{ isOpen: boolean, onClose: () => void, title: string, children: React.ReactNode }> = ({ isOpen, onClose, title, children }) => (
+  <AnimatePresence>
+    {isOpen && (
+      <>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+          className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100]"
+        />
+        <motion.div
+          initial={{ y: '100%' }}
+          animate={{ y: 0 }}
+          exit={{ y: '100%' }}
+          transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+          className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white dark:bg-gray-900 rounded-t-[2.5rem] p-8 z-[110] shadow-2xl"
+        >
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-black">{title}</h2>
+            <button onClick={onClose} className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500">
+              <X size={20} strokeWidth={3} />
+            </button>
+          </div>
+          {children}
+          <button
+            onClick={onClose}
+            className="w-full mt-8 py-4 bg-gray-950 dark:bg-white text-white dark:text-gray-950 font-black rounded-2xl shadow-xl"
+          >
+            Close
+          </button>
+        </motion.div>
+      </>
+    )}
+  </AnimatePresence>
+)
 
 export default Dashboard

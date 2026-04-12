@@ -5,6 +5,7 @@ const Calendar: React.FC = () => {
   const { dues } = useBudgetStore()
 
   const today = new Date()
+  const todayDate = today.getDate()
   const currentMonth = today.getMonth()
   const currentYear = today.getFullYear()
 
@@ -32,15 +33,19 @@ const Calendar: React.FC = () => {
         ))}
 
         {days.map(day => {
-          const isToday = day === today.getDate()
+          const isToday = day === todayDate
           const dayDues = dues.filter(d => d.dayOfMonth === day)
           const allPaid = dayDues.length > 0 && dayDues.every(d => d.isPaid)
+
+          // Crunch Day: Due within 3 days and not paid
+          const isCrunchDay = dayDues.some(d => !d.isPaid && (day >= todayDate && day <= todayDate + 3))
 
           return (
             <div key={day} className="aspect-square flex flex-col items-center justify-center relative">
               <div className={`
                 w-8 h-8 flex items-center justify-center rounded-xl text-xs font-bold transition-all
                 ${isToday ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'text-gray-700 dark:text-gray-300'}
+                ${isCrunchDay && !isToday ? 'bg-red-50 text-red-600 dark:bg-red-900/30' : ''}
               `}>
                 {day}
               </div>
