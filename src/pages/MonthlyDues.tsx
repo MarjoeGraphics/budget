@@ -247,21 +247,21 @@ const CommitmentItem: React.FC<CommitmentItemProps> = ({
 }) => {
   const [isEditing, setIsEditing] = useState(false)
   const [editFields, setEditFields] = useState({
-    label: due.label,
-    amount: due.amount.toString(),
-    dayOfMonth: due.dayOfMonth.toString(),
-    priority: due.priority.toString(),
-    totalTerms: due.totalTerms?.toString() || '',
-    currentTerm: due.currentTerm?.toString() || ''
+    label: due?.label || '',
+    amount: (due?.amount || 0).toString(),
+    dayOfMonth: (due?.dayOfMonth || 1).toString(),
+    priority: (due?.priority || 3).toString(),
+    totalTerms: due?.totalTerms?.toString() || '',
+    currentTerm: due?.currentTerm?.toString() || '1'
   })
 
-  const isCompleted = due.totalTerms && due.currentTerm && due.currentTerm > due.totalTerms
-  const isFunded = due.isPaid || contributedAmount >= due.amount || isCompleted
-  const surplus = contributedAmount > due.amount ? contributedAmount - due.amount : 0
-  const rawProgress = (contributedAmount / due.amount) * 100
+  const isCompleted = !!(due?.totalTerms && due?.currentTerm && due.currentTerm > due.totalTerms)
+  const isFunded = !!(due?.isPaid || contributedAmount >= (due?.amount || 0) || isCompleted)
+  const surplus = contributedAmount > (due?.amount || 0) ? contributedAmount - (due?.amount || 0) : 0
+  const rawProgress = (contributedAmount / (due?.amount || 1)) * 100
   const progress = Math.min(rawProgress, 100)
-  const amountRemaining = Math.max(due.amount - contributedAmount, 0)
-  const daysLeft = due.dayOfMonth - today
+  const amountRemaining = Math.max((due?.amount || 0) - contributedAmount, 0)
+  const daysLeft = (due?.dayOfMonth || 0) - today
 
   const dailyTarget = !isFunded && amountRemaining > 0
     ? (daysLeft > 0 ? amountRemaining / daysLeft : amountRemaining)
@@ -296,7 +296,7 @@ const CommitmentItem: React.FC<CommitmentItemProps> = ({
   }
 
   const getFreedomDate = () => {
-    if (!due.totalTerms || !due.currentTerm) return null
+    if (!due?.totalTerms || !due?.currentTerm) return null
     const monthsRemaining = due.totalTerms - due.currentTerm
     if (monthsRemaining < 0) return 'Completed'
 
@@ -327,23 +327,23 @@ const CommitmentItem: React.FC<CommitmentItemProps> = ({
         <div className="flex items-center gap-4">
           <button
             onClick={(e) => { e.stopPropagation(); onTogglePaid(); }}
-            className={`transition-colors ${due.isPaid || isFunded ? 'text-green-500' : isOverdue ? 'text-red-500' : isCrunch ? 'text-orange-500' : 'text-gray-300 dark:text-gray-600'}`}
+            className={`transition-colors ${due?.isPaid || isFunded ? 'text-green-500' : isOverdue ? 'text-red-500' : isCrunch ? 'text-orange-500' : 'text-gray-300 dark:text-gray-600'}`}
           >
-            {due.isPaid || isFunded ? <CheckCircle2 size={28} strokeWidth={2.5} /> : <Circle size={28} strokeWidth={2.5} />}
+            {due?.isPaid || isFunded ? <CheckCircle2 size={28} strokeWidth={2.5} /> : <Circle size={28} strokeWidth={2.5} />}
           </button>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className={`font-black text-sm ${isCompleted ? 'text-emerald-700 dark:text-emerald-400' : due.isPaid || isFunded ? 'text-green-700 dark:text-green-400' : isOverdue ? 'text-red-700 dark:text-red-400' : isCrunch ? 'text-orange-700 dark:text-orange-400' : ''}`}>
-                {due.label}
+              <h3 className={`font-black text-sm ${isCompleted ? 'text-emerald-700 dark:text-emerald-400' : due?.isPaid || isFunded ? 'text-green-700 dark:text-green-400' : isOverdue ? 'text-red-700 dark:text-red-400' : isCrunch ? 'text-orange-700 dark:text-orange-400' : ''}`}>
+                {due?.label}
               </h3>
-              <div className={`w-2 h-2 rounded-full ${priorityColors[due.priority]}`} />
+              <div className={`w-2 h-2 rounded-full ${priorityColors[due?.priority || 3]}`} />
               {isOverdue && <AlertCircle size={14} className="text-red-500" />}
               {isCrunch && <Info size={14} className="text-orange-500" />}
             </div>
             {!isExpanded && (
               <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-tighter text-gray-400">
                 <CalendarIcon size={10} />
-                Day {due.dayOfMonth}
+                Day {due?.dayOfMonth}
                 {isOverdue && <span className="text-red-500 ml-1">• OVERDUE</span>}
               </div>
             )}
@@ -351,8 +351,8 @@ const CommitmentItem: React.FC<CommitmentItemProps> = ({
         </div>
         <div className="flex items-center gap-3">
           <div className="text-right">
-            <p className={`font-black ${due.isPaid || isFunded ? 'text-green-600' : isOverdue ? 'text-red-600' : ''}`}>
-              ₱ {due.amount.toLocaleString()}
+            <p className={`font-black ${due?.isPaid || isFunded ? 'text-green-600' : isOverdue ? 'text-red-600' : ''}`}>
+              ₱ {(due?.amount || 0).toLocaleString()}
             </p>
           </div>
           <div className="text-gray-400">
@@ -461,11 +461,11 @@ const CommitmentItem: React.FC<CommitmentItemProps> = ({
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-500 bg-gray-100 dark:bg-gray-700/50 px-3 py-1.5 rounded-full w-fit">
                         <CalendarIcon size={12} />
-                        Due on Day {due.dayOfMonth}
+                        Due on Day {due?.dayOfMonth}
                       </div>
-                      <div className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white ${priorityColors[due.priority]} px-3 py-1.5 rounded-full w-fit shadow-lg shadow-black/5`}>
+                      <div className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white ${priorityColors[due?.priority || 3]} px-3 py-1.5 rounded-full w-fit shadow-lg shadow-black/5`}>
                         <Flag size={12} strokeWidth={3} />
-                        Priority {due.priority}: {priorityLabels[due.priority]}
+                        Priority {due?.priority || 3}: {priorityLabels[due?.priority || 3]}
                       </div>
                     </div>
                     <div className="flex gap-1">
@@ -491,12 +491,12 @@ const CommitmentItem: React.FC<CommitmentItemProps> = ({
                       <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Saved / Goal</p>
                       {isFunded ? (
                         <div className="flex items-center gap-2">
-                          <p className="font-black text-sm text-emerald-600">₱ {due.amount.toLocaleString()} / ₱ {due.amount.toLocaleString()}</p>
+                          <p className="font-black text-sm text-emerald-600">₱ {(due?.amount || 0).toLocaleString()} / ₱ {(due?.amount || 0).toLocaleString()}</p>
                           <span className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest">Fully Funded</span>
                         </div>
                       ) : (
                         <p className="font-black text-sm">
-                          ₱ {contributedAmount.toLocaleString()} / <span className="opacity-40">₱ {due.amount.toLocaleString()}</span>
+                          ₱ {contributedAmount.toLocaleString()} / <span className="opacity-40">₱ {(due?.amount || 0).toLocaleString()}</span>
                         </p>
                       )}
                       {surplus > 0 && (
@@ -516,7 +516,7 @@ const CommitmentItem: React.FC<CommitmentItemProps> = ({
                     />
                   </div>
 
-                  {due.totalTerms && due.currentTerm && (
+                  {due?.totalTerms && due?.currentTerm && (
                     <div className="bg-gray-50 dark:bg-gray-900/30 p-5 rounded-3xl border border-gray-100 dark:border-gray-800 space-y-3">
                       <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2">

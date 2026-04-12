@@ -184,6 +184,21 @@ export const useBudgetStore = create<BudgetState>()(
     }),
     {
       name: 'budget-store',
+      version: 1,
+      migrate: (persistedState: unknown, version: number) => {
+        if (version === 0) {
+          const state = persistedState as BudgetState
+          // Migration for version 0 to 1: add priority 3 to existing dues
+          return {
+            ...state,
+            dues: (state.dues || []).map((due) => ({
+              ...due,
+              priority: due.priority ?? 3,
+            })),
+          }
+        }
+        return persistedState
+      },
     }
   )
 )
