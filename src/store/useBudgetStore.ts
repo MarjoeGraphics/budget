@@ -17,7 +17,6 @@ export interface Due {
   amount: number
   isPaid: boolean
   dayOfMonth: number
-  contributedAmount: number
 }
 
 export interface Preset {
@@ -39,7 +38,7 @@ interface BudgetState {
   setBalance: (amount: number) => void
   addTransaction: (transaction: Omit<Transaction, 'id' | 'date'>) => void
 
-  addDue: (due: Omit<Due, 'id' | 'isPaid' | 'contributedAmount'>) => void
+  addDue: (due: Omit<Due, 'id' | 'isPaid'>) => void
   toggleDuePaid: (id: string) => void
   deleteDue: (id: string) => void
   updateDue: (id: string, updates: Partial<Due>) => void
@@ -73,41 +72,20 @@ export const useBudgetStore = create<BudgetState>()(
         }
 
         let newBalance = state.balance
-        if (t.type === 'income') {
+        if (t.type === 'income' || t.type === 'savings') {
           newBalance += t.amount
         } else {
           newBalance -= t.amount
         }
 
-        // Waterfall System for Income or Savings
-        let updatedDues = [...state.dues]
-        if (t.type === 'income') {
-          let remainingWaterfall = t.amount
-          // Sort dues by dayOfMonth soonest first
-          updatedDues = updatedDues.sort((a, b) => a.dayOfMonth - b.dayOfMonth).map(d => {
-            if (!d.isPaid && remainingWaterfall > 0) {
-              const needed = d.amount - d.contributedAmount
-              const allocation = Math.min(needed, remainingWaterfall)
-              remainingWaterfall -= allocation
-              return {
-                ...d,
-                contributedAmount: d.contributedAmount + allocation,
-                isPaid: d.contributedAmount + allocation >= d.amount
-              }
-            }
-            return d
-          })
-        }
-
         return {
           transactions: [newTransaction, ...state.transactions],
           balance: newBalance,
-          dues: updatedDues
         }
       }),
 
       addDue: (due) => set((state) => ({
-        dues: [...state.dues, { ...due, id: crypto.randomUUID(), isPaid: false, contributedAmount: 0 }]
+        dues: [...state.dues, { ...due, id: crypto.randomUUID(), isPaid: false }]
       })),
 
       toggleDuePaid: (id) => set((state) => {
@@ -143,7 +121,6 @@ export const useBudgetStore = create<BudgetState>()(
               return {
                 ...d,
                 isPaid: isMarkingPaid,
-                contributedAmount: isMarkingPaid ? d.amount : 0
               }
             }
             return d
@@ -158,12 +135,7 @@ export const useBudgetStore = create<BudgetState>()(
       updateDue: (id, updates) => set((state) => ({
         dues: state.dues.map(d => {
           if (id === d.id) {
-            const updated = { ...d, ...updates }
-            // Auto-update isPaid if contributedAmount changes manually
-            if (updates.contributedAmount !== undefined) {
-               updated.isPaid = updated.contributedAmount >= updated.amount
-            }
-            return updated
+            return { ...d, ...updates }
           }
           return d
         })
@@ -184,7 +156,7 @@ export const useBudgetStore = create<BudgetState>()(
         if (currentMonth !== lastResetMonth) {
           set({
             lastResetMonth: currentMonth,
-            dues: dues.map(d => ({ ...d, isPaid: false, contributedAmount: 0 }))
+            dues: dues.map(d => ({ ...d, isPaid: false }))
           })
         }
       },

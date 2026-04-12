@@ -3,9 +3,11 @@ import { useBudgetStore, type Due } from '../store/useBudgetStore'
 import { Plus, CheckCircle2, Circle, Calendar as CalendarIcon, AlertCircle, Trash2, Info, ChevronDown, ChevronUp, Check, Edit3, X } from 'lucide-react'
 import Calendar from '../components/calendar/Calendar'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useWaterfall } from '../hooks/useWaterfall'
 
 const MonthlyDues: React.FC = () => {
   const { dues, addDue, toggleDuePaid, deleteDue, updateDue, checkAndResetMonthlyDues } = useBudgetStore()
+  const waterfall = useWaterfall()
   const [isAdding, setIsAdding] = useState(false)
   const [newDue, setNewDue] = useState({ label: '', amount: '', dayOfMonth: new Date().getDate().toString() })
 
@@ -122,6 +124,7 @@ const MonthlyDues: React.FC = () => {
               <CommitmentItem
                 key={due.id}
                 due={due}
+                contributedAmount={waterfall[due.id] || 0}
                 isOverdue={isOverdue}
                 isCrunch={isCrunch}
                 today={today}
@@ -141,6 +144,7 @@ const MonthlyDues: React.FC = () => {
 
 interface CommitmentItemProps {
   due: Due
+  contributedAmount: number
   isOverdue: boolean
   isCrunch: boolean
   today: number
@@ -152,22 +156,21 @@ interface CommitmentItemProps {
 }
 
 const CommitmentItem: React.FC<CommitmentItemProps> = ({
-  due, isOverdue, isCrunch, today, isExpanded,
+  due, contributedAmount, isOverdue, isCrunch, today, isExpanded,
   onToggleExpand, onTogglePaid, onDelete, onUpdate
 }) => {
   const [isEditing, setIsEditing] = useState(false)
   const [editFields, setEditFields] = useState({
     label: due.label,
     amount: due.amount.toString(),
-    contributedAmount: due.contributedAmount.toString(),
     dayOfMonth: due.dayOfMonth.toString()
   })
 
-  const isFunded = due.contributedAmount >= due.amount
-  const surplus = isFunded ? due.contributedAmount - due.amount : 0
-  const rawProgress = (due.contributedAmount / due.amount) * 100
+  const isFunded = due.isPaid || contributedAmount >= due.amount
+  const surplus = contributedAmount > due.amount ? contributedAmount - due.amount : 0
+  const rawProgress = (contributedAmount / due.amount) * 100
   const progress = Math.min(rawProgress, 100)
-  const amountRemaining = Math.max(due.amount - due.contributedAmount, 0)
+  const amountRemaining = Math.max(due.amount - contributedAmount, 0)
   const daysLeft = due.dayOfMonth - today
 
   const dailyTarget = !isFunded && amountRemaining > 0
@@ -178,7 +181,6 @@ const CommitmentItem: React.FC<CommitmentItemProps> = ({
     onUpdate({
       label: editFields.label,
       amount: parseFloat(editFields.amount),
-      contributedAmount: parseFloat(editFields.contributedAmount),
       dayOfMonth: parseInt(editFields.dayOfMonth)
     })
     setIsEditing(false)
@@ -289,15 +291,6 @@ const CommitmentItem: React.FC<CommitmentItemProps> = ({
                       />
                     </div>
                   </div>
-                  <div>
-                    <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Manually Saved Amount</label>
-                    <input
-                      type="number"
-                      value={editFields.contributedAmount}
-                      onChange={(e) => setEditFields({ ...editFields, contributedAmount: e.target.value })}
-                      className="w-full bg-gray-50 dark:bg-gray-700 p-3 rounded-xl border-none outline-none font-bold text-sm"
-                    />
-                  </div>
                   <div className="flex gap-2">
                     <button onClick={handleSaveEdit} className="flex-1 py-3 bg-blue-600 text-white font-black rounded-xl text-xs uppercase">Save Changes</button>
                     <button onClick={() => setIsEditing(false)} className="px-4 py-3 bg-gray-100 dark:bg-gray-700 font-black rounded-xl text-xs uppercase"><X size={16} /></button>
@@ -331,9 +324,16 @@ const CommitmentItem: React.FC<CommitmentItemProps> = ({
                   <div className="flex justify-between items-end">
                     <div>
                       <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Saved / Goal</p>
-                      <p className="font-black text-sm">
-                        ₱ {due.contributedAmount.toLocaleString()} / <span className="opacity-40">₱ {due.amount.toLocaleString()}</span>
-                      </p>
+                      {isFunded ? (
+                        <div className="flex items-center gap-2">
+                          <p className="font-black text-sm text-emerald-600">₱ {due.amount.toLocaleString()} / ₱ {due.amount.toLocaleString()}</p>
+                          <span className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest">Fully Funded</span>
+                        </div>
+                      ) : (
+                        <p className="font-black text-sm">
+                          ₱ {contributedAmount.toLocaleString()} / <span className="opacity-40">₱ {due.amount.toLocaleString()}</span>
+                        </p>
+                      )}
                       {surplus > 0 && (
                         <p className="text-[10px] font-black text-emerald-600 uppercase mt-1">Surplus: ₱ {surplus.toLocaleString()}</p>
                       )}

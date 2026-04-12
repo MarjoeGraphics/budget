@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react'
 import { useBudgetStore, type Transaction } from '../store/useBudgetStore'
 import { Edit2, Check, X, TrendingUp, TrendingDown, Lightbulb, Target, Info as InfoIcon } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useWaterfall } from '../hooks/useWaterfall'
 
 const Dashboard: React.FC = () => {
   const { balance, transactions, dues, setBalance, checkAndResetMonthlyDues } = useBudgetStore()
+  const waterfall = useWaterfall()
 
   const [isEditingBalance, setIsEditingBalance] = useState(false)
   const [editBalanceValue, setEditBalanceValue] = useState(balance.toString())
@@ -26,12 +28,13 @@ const Dashboard: React.FC = () => {
 
   // Logic & Math
   // Choice A: Safe to Spend = Balance - Unpaid Goals (since Balance is total cash)
+  // dueLeft should be the total amount of all goals that are NOT yet paid.
   const dueLeft = dues
     .filter(d => !d.isPaid)
-    .reduce((acc, d) => acc + d.amount - d.contributedAmount, 0)
+    .reduce((acc, d) => acc + d.amount, 0)
 
   const totalDuesAmount = dues.reduce((acc, d) => acc + d.amount, 0)
-  const clearedDuesAmount = dues.reduce((acc, d) => acc + d.contributedAmount, 0)
+  const clearedDuesAmount = dues.reduce((acc, d) => acc + (waterfall[d.id] || 0), 0)
   const duesClearedPercent = totalDuesAmount > 0 ? (clearedDuesAmount / totalDuesAmount) * 100 : 0
 
   const safeToSpend = balance - dueLeft
