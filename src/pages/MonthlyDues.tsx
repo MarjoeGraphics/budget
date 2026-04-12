@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useBudgetStore, type Due } from '../store/useBudgetStore'
-import { Plus, CheckCircle2, Circle, HandCoins, Calendar as CalendarIcon, AlertCircle, Trash2, Info, ChevronDown, ChevronUp } from 'lucide-react'
+import { Plus, CheckCircle2, Circle, HandCoins, Calendar as CalendarIcon, AlertCircle, Trash2, Info, ChevronDown, ChevronUp, Check } from 'lucide-react'
 import Calendar from '../components/calendar/Calendar'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -198,20 +198,22 @@ const CommitmentItem: React.FC<CommitmentItemProps> = ({
   due, isOverdue, isCrunch, today, isExpanded,
   onToggleExpand, onTogglePaid, onDelete, onContribute
 }) => {
-  const progress = Math.min((due.contributedAmount / due.amount) * 100, 100)
-  const amountRemaining = due.amount - due.contributedAmount
+  const isFunded = due.contributedAmount >= due.amount
+  const surplus = isFunded ? due.contributedAmount - due.amount : 0
+  const rawProgress = (due.contributedAmount / due.amount) * 100
+  const progress = Math.min(rawProgress, 100)
+  const amountRemaining = Math.max(due.amount - due.contributedAmount, 0)
   const daysLeft = due.dayOfMonth - today
 
   // Daily saving target: (Total - Saved) / (Days left until Due Date)
-  // If daysLeft is 0 or less, target is the full remaining amount.
-  const dailyTarget = !due.isPaid && amountRemaining > 0
+  const dailyTarget = !isFunded && amountRemaining > 0
     ? (daysLeft > 0 ? amountRemaining / daysLeft : amountRemaining)
     : 0
 
   return (
     <div
       className={`rounded-[2rem] transition-all border-2 overflow-hidden ${
-        due.isPaid
+        due.isPaid || isFunded
           ? 'bg-green-50/50 dark:bg-green-900/10 border-green-100 dark:border-green-900/30'
           : isOverdue
             ? 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-900/30'
@@ -223,18 +225,18 @@ const CommitmentItem: React.FC<CommitmentItemProps> = ({
       {/* Header View */}
       <div
         onClick={onToggleExpand}
-        className="p-5 flex items-center justify-between cursor-pointer active:scale-[0.99] transition-transform"
+        className="p-5 pb-2 flex items-center justify-between cursor-pointer active:scale-[0.99] transition-transform"
       >
         <div className="flex items-center gap-4">
           <button
             onClick={(e) => { e.stopPropagation(); onTogglePaid(); }}
-            className={`transition-colors ${due.isPaid ? 'text-green-500' : isOverdue ? 'text-red-500' : isCrunch ? 'text-orange-500' : 'text-gray-300 dark:text-gray-600'}`}
+            className={`transition-colors ${due.isPaid || isFunded ? 'text-green-500' : isOverdue ? 'text-red-500' : isCrunch ? 'text-orange-500' : 'text-gray-300 dark:text-gray-600'}`}
           >
-            {due.isPaid ? <CheckCircle2 size={28} strokeWidth={2.5} /> : <Circle size={28} strokeWidth={2.5} />}
+            {due.isPaid || isFunded ? <CheckCircle2 size={28} strokeWidth={2.5} /> : <Circle size={28} strokeWidth={2.5} />}
           </button>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className={`font-black text-sm ${due.isPaid ? 'text-green-700 dark:text-green-400' : isOverdue ? 'text-red-700 dark:text-red-400' : isCrunch ? 'text-orange-700 dark:text-orange-400' : ''}`}>
+              <h3 className={`font-black text-sm ${due.isPaid || isFunded ? 'text-green-700 dark:text-green-400' : isOverdue ? 'text-red-700 dark:text-red-400' : isCrunch ? 'text-orange-700 dark:text-orange-400' : ''}`}>
                 {due.label}
               </h3>
               {isOverdue && <AlertCircle size={14} className="text-red-500" />}
@@ -251,13 +253,24 @@ const CommitmentItem: React.FC<CommitmentItemProps> = ({
         </div>
         <div className="flex items-center gap-3">
           <div className="text-right">
-            <p className={`font-black ${due.isPaid ? 'text-green-600' : isOverdue ? 'text-red-600' : ''}`}>
+            <p className={`font-black ${due.isPaid || isFunded ? 'text-green-600' : isOverdue ? 'text-red-600' : ''}`}>
               ₱ {due.amount.toLocaleString()}
             </p>
           </div>
           <div className="text-gray-400">
             {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
           </div>
+        </div>
+      </div>
+
+      {/* Progress Bar (Always Visible) */}
+      <div className="px-5 pb-4">
+        <div className="h-2 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+          <motion.div
+            initial={false}
+            animate={{ width: `${progress}%` }}
+            className={`h-full transition-colors ${due.isPaid || isFunded ? 'bg-emerald-500' : isOverdue ? 'bg-red-500' : isCrunch ? 'bg-orange-500' : 'bg-blue-600'}`}
+          />
         </div>
       </div>
 
@@ -292,42 +305,56 @@ const CommitmentItem: React.FC<CommitmentItemProps> = ({
                   <p className="font-black text-sm">
                     ₱ {due.contributedAmount.toLocaleString()} / <span className="opacity-40">₱ {due.amount.toLocaleString()}</span>
                   </p>
+                  {surplus > 0 && (
+                    <p className="text-[10px] font-black text-emerald-600 uppercase mt-1">Surplus: ₱ {surplus.toLocaleString()}</p>
+                  )}
                 </div>
-                <p className={`text-xl font-black ${due.isPaid ? 'text-green-600' : isOverdue ? 'text-red-600' : isCrunch ? 'text-orange-600' : 'text-blue-600'}`}>
-                  {Math.round(progress)}%
+                <p className={`text-xl font-black ${due.isPaid || isFunded ? 'text-emerald-600' : isOverdue ? 'text-red-600' : isCrunch ? 'text-orange-600' : 'text-blue-600'}`}>
+                  {Math.round(rawProgress)}%
                 </p>
               </div>
 
-              {/* Progress Bar */}
+              {/* Big Progress Bar in Expanded View */}
               <div className="h-4 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner">
                 <motion.div
-                  initial={{ width: 0 }}
+                  initial={false}
                   animate={{ width: `${progress}%` }}
-                  className={`h-full transition-colors ${due.isPaid ? 'bg-green-500' : isOverdue ? 'bg-red-500' : isCrunch ? 'bg-orange-500' : 'bg-blue-600'}`}
+                  className={`h-full transition-colors ${due.isPaid || isFunded ? 'bg-emerald-500' : isOverdue ? 'bg-red-500' : isCrunch ? 'bg-orange-500' : 'bg-blue-600'}`}
                 />
               </div>
 
               {/* Saving Target Section */}
-              {!due.isPaid && (
-                <div className={`p-4 rounded-2xl text-center flex flex-col items-center gap-1 ${
-                  isOverdue
+              <div className={`p-4 rounded-2xl text-center flex flex-col items-center gap-1 ${
+                isFunded
+                  ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-2 border-emerald-100 dark:border-emerald-900/30'
+                  : isOverdue
                     ? 'bg-red-500 text-white'
                     : isCrunch
                       ? 'bg-orange-500 text-white'
                       : 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                }`}>
-                  <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-80">Daily Saving Target</p>
-                  <p className="text-2xl font-black">
-                    ₱ {Math.ceil(dailyTarget).toLocaleString()}
-                  </p>
-                  <p className="text-[8px] font-bold uppercase opacity-60">
-                    {isOverdue ? 'Due Now' : daysLeft > 0 ? `To save in ${daysLeft} day${daysLeft === 1 ? '' : 's'}` : 'Due Today'}
-                  </p>
-                </div>
-              )}
+              }`}>
+                {isFunded ? (
+                  <div className="flex items-center gap-2">
+                    <div className="bg-emerald-500 text-white p-1 rounded-full">
+                      <Check size={14} strokeWidth={4} />
+                    </div>
+                    <p className="text-sm font-black uppercase tracking-widest">Fully Funded</p>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-80">Daily Saving Target</p>
+                    <p className="text-2xl font-black">
+                      ₱ {Math.ceil(dailyTarget).toLocaleString()}
+                    </p>
+                    <p className="text-[8px] font-bold uppercase opacity-60">
+                      {isOverdue ? 'Due Now' : daysLeft > 0 ? `To save in ${daysLeft} day${daysLeft === 1 ? '' : 's'}` : 'Due Today'}
+                    </p>
+                  </>
+                )}
+              </div>
 
               {/* Action Button */}
-              {!due.isPaid && (
+              {!isFunded && (
                 <button
                   onClick={(e) => { e.stopPropagation(); onContribute(); }}
                   className={`w-full py-4 text-xs font-black uppercase rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-md ${
