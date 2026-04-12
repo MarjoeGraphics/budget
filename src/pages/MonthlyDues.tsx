@@ -1,16 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import { useBudgetStore, type Due } from '../store/useBudgetStore'
-import { Plus, CheckCircle2, Circle, HandCoins, Calendar as CalendarIcon, AlertCircle, Trash2, Info, ChevronDown, ChevronUp, Check } from 'lucide-react'
+import { Plus, CheckCircle2, Circle, Calendar as CalendarIcon, AlertCircle, Trash2, Info, ChevronDown, ChevronUp, Check, Edit3, X } from 'lucide-react'
 import Calendar from '../components/calendar/Calendar'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const MonthlyDues: React.FC = () => {
-  const { dues, addDue, toggleDuePaid, deleteDue, contributeToDue, checkAndResetMonthlyDues } = useBudgetStore()
+  const { dues, addDue, toggleDuePaid, deleteDue, updateDue, checkAndResetMonthlyDues } = useBudgetStore()
   const [isAdding, setIsAdding] = useState(false)
   const [newDue, setNewDue] = useState({ label: '', amount: '', dayOfMonth: new Date().getDate().toString() })
-
-  const [isContributing, setIsContributing] = useState<string | null>(null)
-  const [contributionAmount, setContributionAmount] = useState('')
 
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
@@ -30,15 +27,6 @@ const MonthlyDues: React.FC = () => {
     setIsAdding(false)
   }
 
-  const handleContribute = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (isContributing && contributionAmount) {
-      contributeToDue(isContributing, parseFloat(contributionAmount))
-      setIsContributing(null)
-      setContributionAmount('')
-    }
-  }
-
   const today = new Date().getDate()
 
   const toggleExpand = (id: string) => {
@@ -47,7 +35,7 @@ const MonthlyDues: React.FC = () => {
 
   return (
     <div className="p-6 pb-24">
-      <h1 className="text-2xl font-black mb-6">Monthly Dues</h1>
+      <h1 className="text-2xl font-black mb-6">Monthly Goals</h1>
 
       {/* Calendar Section */}
       <section className="mb-8">
@@ -60,12 +48,12 @@ const MonthlyDues: React.FC = () => {
         className="w-full py-4 mb-8 bg-blue-600 text-white font-black rounded-2xl shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-3"
       >
         <Plus size={20} strokeWidth={3} />
-        Add New Commitment
+        Add New Monthly Goal
       </button>
 
       {isAdding && (
         <form onSubmit={handleAdd} className="mb-8 bg-gray-50 dark:bg-gray-800 p-6 rounded-[2rem] space-y-4 border border-blue-100 dark:border-blue-900/30">
-          <h2 className="font-bold text-sm uppercase tracking-widest text-blue-600 mb-2">New Monthly Bill</h2>
+          <h2 className="font-bold text-sm uppercase tracking-widest text-blue-600 mb-2">New Goal</h2>
           <div>
             <label className="block text-[10px] font-black text-gray-400 uppercase mb-1 ml-1">Label</label>
             <input
@@ -79,7 +67,7 @@ const MonthlyDues: React.FC = () => {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-[10px] font-black text-gray-400 uppercase mb-1 ml-1">Amount</label>
+              <label className="block text-[10px] font-black text-gray-400 uppercase mb-1 ml-1">Goal Amount</label>
               <input
                 type="number"
                 value={newDue.amount}
@@ -105,7 +93,7 @@ const MonthlyDues: React.FC = () => {
               type="submit"
               className="flex-1 py-4 bg-blue-600 text-white font-black rounded-2xl shadow-lg shadow-blue-500/20"
             >
-              Add Bill
+              Set Goal
             </button>
             <button
               type="button"
@@ -120,10 +108,10 @@ const MonthlyDues: React.FC = () => {
 
       {/* List Section */}
       <section className="space-y-4">
-        <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Monthly Commitments</h2>
+        <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Active Monthly Goals</h2>
         {dues.length === 0 ? (
           <div className="bg-gray-50 dark:bg-gray-800/50 rounded-3xl p-12 text-center text-gray-400 font-medium border-2 border-dashed border-gray-100 dark:border-gray-800">
-            No commitments yet.
+            No goals set yet.
           </div>
         ) : (
           dues.sort((a, b) => a.dayOfMonth - b.dayOfMonth).map((due) => {
@@ -141,43 +129,12 @@ const MonthlyDues: React.FC = () => {
                 onToggleExpand={() => toggleExpand(due.id)}
                 onTogglePaid={() => toggleDuePaid(due.id)}
                 onDelete={() => deleteDue(due.id)}
-                onContribute={() => setIsContributing(due.id)}
+                onUpdate={(updates) => updateDue(due.id, updates)}
               />
             )
           })
         )}
       </section>
-
-      {/* Contribution Modal */}
-      <AnimatePresence>
-        {isContributing && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[150] flex items-center justify-center p-6">
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white dark:bg-gray-800 w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl"
-            >
-              <h2 className="text-xl font-black mb-2">Contribute</h2>
-              <p className="text-gray-500 text-sm mb-6 font-medium">How much would you like to put towards this bill?</p>
-              <form onSubmit={handleContribute} className="space-y-4">
-                <input
-                  type="number"
-                  value={contributionAmount}
-                  onChange={(e) => setContributionAmount(e.target.value)}
-                  placeholder="₱ 0.00"
-                  className="w-full bg-gray-100 dark:bg-gray-700 border-none rounded-2xl p-5 text-2xl font-black outline-none focus:ring-2 focus:ring-blue-500"
-                  autoFocus
-                />
-                <div className="flex gap-2">
-                  <button type="submit" className="flex-1 py-4 bg-blue-600 text-white font-black rounded-2xl">Confirm</button>
-                  <button type="button" onClick={() => setIsContributing(null)} className="flex-1 py-4 bg-gray-100 dark:bg-gray-700 font-black rounded-2xl">Cancel</button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   )
 }
@@ -191,13 +148,21 @@ interface CommitmentItemProps {
   onToggleExpand: () => void
   onTogglePaid: () => void
   onDelete: () => void
-  onContribute: () => void
+  onUpdate: (updates: Partial<Due>) => void
 }
 
 const CommitmentItem: React.FC<CommitmentItemProps> = ({
   due, isOverdue, isCrunch, today, isExpanded,
-  onToggleExpand, onTogglePaid, onDelete, onContribute
+  onToggleExpand, onTogglePaid, onDelete, onUpdate
 }) => {
+  const [isEditing, setIsEditing] = useState(false)
+  const [editFields, setEditFields] = useState({
+    label: due.label,
+    amount: due.amount.toString(),
+    contributedAmount: due.contributedAmount.toString(),
+    dayOfMonth: due.dayOfMonth.toString()
+  })
+
   const isFunded = due.contributedAmount >= due.amount
   const surplus = isFunded ? due.contributedAmount - due.amount : 0
   const rawProgress = (due.contributedAmount / due.amount) * 100
@@ -205,10 +170,19 @@ const CommitmentItem: React.FC<CommitmentItemProps> = ({
   const amountRemaining = Math.max(due.amount - due.contributedAmount, 0)
   const daysLeft = due.dayOfMonth - today
 
-  // Daily saving target: (Total - Saved) / (Days left until Due Date)
   const dailyTarget = !isFunded && amountRemaining > 0
     ? (daysLeft > 0 ? amountRemaining / daysLeft : amountRemaining)
     : 0
+
+  const handleSaveEdit = () => {
+    onUpdate({
+      label: editFields.label,
+      amount: parseFloat(editFields.amount),
+      contributedAmount: parseFloat(editFields.contributedAmount),
+      dayOfMonth: parseInt(editFields.dayOfMonth)
+    })
+    setIsEditing(false)
+  }
 
   return (
     <div
@@ -284,89 +258,128 @@ const CommitmentItem: React.FC<CommitmentItemProps> = ({
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
           >
             <div className="px-5 pb-5 pt-0 space-y-4 border-t border-gray-100 dark:border-gray-700/50 mt-1">
-              {/* Top Row: Date & Delete */}
-              <div className="flex justify-between items-center pt-4">
-                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-500 bg-gray-100 dark:bg-gray-700/50 px-3 py-1.5 rounded-full">
-                  <CalendarIcon size={12} />
-                  Due on Day {due.dayOfMonth}
-                </div>
-                <button
-                  onClick={(e) => { e.stopPropagation(); onDelete(); }}
-                  className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-                >
-                  <Trash2 size={18} />
-                </button>
-              </div>
-
-              {/* Stats Row */}
-              <div className="flex justify-between items-end">
-                <div>
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Saved / Total</p>
-                  <p className="font-black text-sm">
-                    ₱ {due.contributedAmount.toLocaleString()} / <span className="opacity-40">₱ {due.amount.toLocaleString()}</span>
-                  </p>
-                  {surplus > 0 && (
-                    <p className="text-[10px] font-black text-emerald-600 uppercase mt-1">Surplus: ₱ {surplus.toLocaleString()}</p>
-                  )}
-                </div>
-                <p className={`text-xl font-black ${due.isPaid || isFunded ? 'text-emerald-600' : isOverdue ? 'text-red-600' : isCrunch ? 'text-orange-600' : 'text-blue-600'}`}>
-                  {Math.round(rawProgress)}%
-                </p>
-              </div>
-
-              {/* Big Progress Bar in Expanded View */}
-              <div className="h-4 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner">
-                <motion.div
-                  initial={false}
-                  animate={{ width: `${progress}%` }}
-                  className={`h-full transition-colors ${due.isPaid || isFunded ? 'bg-emerald-500' : isOverdue ? 'bg-red-500' : isCrunch ? 'bg-orange-500' : 'bg-blue-600'}`}
-                />
-              </div>
-
-              {/* Saving Target Section */}
-              <div className={`p-4 rounded-2xl text-center flex flex-col items-center gap-1 ${
-                isFunded
-                  ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-2 border-emerald-100 dark:border-emerald-900/30'
-                  : isOverdue
-                    ? 'bg-red-500 text-white'
-                    : isCrunch
-                      ? 'bg-orange-500 text-white'
-                      : 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-              }`}>
-                {isFunded ? (
-                  <div className="flex items-center gap-2">
-                    <div className="bg-emerald-500 text-white p-1 rounded-full">
-                      <Check size={14} strokeWidth={4} />
-                    </div>
-                    <p className="text-sm font-black uppercase tracking-widest">Fully Funded</p>
+              {isEditing ? (
+                <div className="space-y-4 pt-4">
+                  <div>
+                    <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Label</label>
+                    <input
+                      type="text"
+                      value={editFields.label}
+                      onChange={(e) => setEditFields({ ...editFields, label: e.target.value })}
+                      className="w-full bg-gray-50 dark:bg-gray-700 p-3 rounded-xl border-none outline-none font-bold text-sm"
+                    />
                   </div>
-                ) : (
-                  <>
-                    <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-80">Daily Saving Target</p>
-                    <p className="text-2xl font-black">
-                      ₱ {Math.ceil(dailyTarget).toLocaleString()}
-                    </p>
-                    <p className="text-[8px] font-bold uppercase opacity-60">
-                      {isOverdue ? 'Due Now' : daysLeft > 0 ? `To save in ${daysLeft} day${daysLeft === 1 ? '' : 's'}` : 'Due Today'}
-                    </p>
-                  </>
-                )}
-              </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Goal Amount</label>
+                      <input
+                        type="number"
+                        value={editFields.amount}
+                        onChange={(e) => setEditFields({ ...editFields, amount: e.target.value })}
+                        className="w-full bg-gray-50 dark:bg-gray-700 p-3 rounded-xl border-none outline-none font-bold text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Day of Month</label>
+                      <input
+                        type="number"
+                        value={editFields.dayOfMonth}
+                        onChange={(e) => setEditFields({ ...editFields, dayOfMonth: e.target.value })}
+                        className="w-full bg-gray-50 dark:bg-gray-700 p-3 rounded-xl border-none outline-none font-bold text-sm"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Manually Saved Amount</label>
+                    <input
+                      type="number"
+                      value={editFields.contributedAmount}
+                      onChange={(e) => setEditFields({ ...editFields, contributedAmount: e.target.value })}
+                      className="w-full bg-gray-50 dark:bg-gray-700 p-3 rounded-xl border-none outline-none font-bold text-sm"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={handleSaveEdit} className="flex-1 py-3 bg-blue-600 text-white font-black rounded-xl text-xs uppercase">Save Changes</button>
+                    <button onClick={() => setIsEditing(false)} className="px-4 py-3 bg-gray-100 dark:bg-gray-700 font-black rounded-xl text-xs uppercase"><X size={16} /></button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="flex justify-between items-center pt-4">
+                    <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-500 bg-gray-100 dark:bg-gray-700/50 px-3 py-1.5 rounded-full">
+                      <CalendarIcon size={12} />
+                      Due on Day {due.dayOfMonth}
+                    </div>
+                    <div className="flex gap-1">
+                      <button
+                        aria-label="Edit Goal"
+                        onClick={() => setIsEditing(true)}
+                        className="p-2 text-gray-400 hover:text-blue-500 transition-colors edit-goal-btn"
+                      >
+                        <Edit3 size={18} />
+                      </button>
+                      <button
+                        aria-label="Delete Goal"
+                        onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                        className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  </div>
 
-              {/* Action Button */}
-              {!isFunded && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onContribute(); }}
-                  className={`w-full py-4 text-xs font-black uppercase rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-md ${
-                    isOverdue
-                      ? 'bg-white text-red-600'
-                      : isCrunch
-                        ? 'bg-white text-orange-600'
-                        : 'bg-blue-600 text-white'
-                  }`}
-                >
-                  <HandCoins size={16} strokeWidth={3} /> Contribute Now
-                </button>
+                  <div className="flex justify-between items-end">
+                    <div>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Saved / Goal</p>
+                      <p className="font-black text-sm">
+                        ₱ {due.contributedAmount.toLocaleString()} / <span className="opacity-40">₱ {due.amount.toLocaleString()}</span>
+                      </p>
+                      {surplus > 0 && (
+                        <p className="text-[10px] font-black text-emerald-600 uppercase mt-1">Surplus: ₱ {surplus.toLocaleString()}</p>
+                      )}
+                    </div>
+                    <p className={`text-xl font-black ${due.isPaid || isFunded ? 'text-emerald-600' : isOverdue ? 'text-red-600' : isCrunch ? 'text-orange-600' : 'text-blue-600'}`}>
+                      {Math.round(rawProgress)}%
+                    </p>
+                  </div>
+
+                  <div className="h-4 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner">
+                    <motion.div
+                      initial={false}
+                      animate={{ width: `${progress}%` }}
+                      className={`h-full transition-colors ${due.isPaid || isFunded ? 'bg-emerald-500' : isOverdue ? 'bg-red-500' : isCrunch ? 'bg-orange-500' : 'bg-blue-600'}`}
+                    />
+                  </div>
+
+                  <div className={`p-4 rounded-2xl text-center flex flex-col items-center gap-1 ${
+                    isFunded
+                      ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-2 border-emerald-100 dark:border-emerald-900/30'
+                      : isOverdue
+                        ? 'bg-red-500 text-white'
+                        : isCrunch
+                          ? 'bg-orange-500 text-white'
+                          : 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                  }`}>
+                    {isFunded ? (
+                      <div className="flex items-center gap-2">
+                        <div className="bg-emerald-500 text-white p-1 rounded-full">
+                          <Check size={14} strokeWidth={4} />
+                        </div>
+                        <p className="text-sm font-black uppercase tracking-widest">Fully Funded</p>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-80">Needed to save daily</p>
+                        <p className="text-2xl font-black">
+                          ₱ {Math.ceil(dailyTarget).toLocaleString()}
+                        </p>
+                        <p className="text-[8px] font-bold uppercase opacity-60">
+                          {isOverdue ? 'Due Now' : daysLeft > 0 ? `To save in ${daysLeft} day${daysLeft === 1 ? '' : 's'}` : 'Due Today'}
+                        </p>
+                      </>
+                    )}
+                  </div>
+                </>
               )}
             </div>
           </motion.div>

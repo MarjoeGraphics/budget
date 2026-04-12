@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useBudgetStore, type Transaction } from '../store/useBudgetStore'
-import { Edit2, Check, X, TrendingUp, TrendingDown, Lightbulb, Target, Info } from 'lucide-react'
+import { Edit2, Check, X, TrendingUp, TrendingDown, Lightbulb, Target, Info as InfoIcon } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const Dashboard: React.FC = () => {
@@ -25,6 +25,7 @@ const Dashboard: React.FC = () => {
   }
 
   // Logic & Math
+  // Choice A: Safe to Spend = Balance - Unpaid Goals (since Balance is total cash)
   const dueLeft = dues
     .filter(d => !d.isPaid)
     .reduce((acc, d) => acc + d.amount - d.contributedAmount, 0)
@@ -42,9 +43,14 @@ const Dashboard: React.FC = () => {
   const daysLeft = Math.max(daysInMonth - now.getDate(), 1)
   const dailyAllowance = safeToSpend / daysLeft
 
+  // Activity Filtering: Only show external transactions
+  // Internal are those with isInternal flag or maybe we don't even log internal allocations as transactions
+  // Dashboard Activity should show external transactions like Gigs, Fuel, etc.
+  const externalTransactions = transactions.filter(t => !t.isInternal)
+
   // Chart Logic (Current Month)
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime()
-  const monthTransactions = transactions.filter(t => t.date >= startOfMonth)
+  const monthTransactions = externalTransactions.filter(t => t.date >= startOfMonth)
 
   const income = monthTransactions.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0)
   const expenses = monthTransactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0)
@@ -76,7 +82,7 @@ const Dashboard: React.FC = () => {
               onClick={() => setIsGuideOpen(true)}
               className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors"
             >
-              <Info size={16} strokeWidth={2.5} />
+              <InfoIcon size={16} strokeWidth={2.5} />
             </button>
           </div>
 
@@ -115,7 +121,7 @@ const Dashboard: React.FC = () => {
               )}
             </div>
             <div>
-              <p className="text-white/60 text-[10px] font-black uppercase tracking-widest mb-1">Due Left</p>
+              <p className="text-white/60 text-[10px] font-black uppercase tracking-widest mb-1">Goals Left</p>
               <p className="text-lg font-black">₱ {dueLeft.toLocaleString()}</p>
             </div>
           </div>
@@ -147,7 +153,7 @@ const Dashboard: React.FC = () => {
         </div>
 
         <div className="bg-white dark:bg-gray-800 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col items-center justify-between">
-           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Dues Cleared</p>
+           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Goals Cleared</p>
            <div className="relative w-16 h-16 flex items-center justify-center">
               <svg className="w-full h-full transform -rotate-90">
                 <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="6" fill="transparent" className="text-gray-100 dark:text-gray-700" />
@@ -185,9 +191,9 @@ const Dashboard: React.FC = () => {
                 <Target size={20} strokeWidth={2.5} />
               </div>
               <div>
-                <p className="text-purple-900 dark:text-purple-300 font-black text-sm">Debt Coverage</p>
+                <p className="text-purple-900 dark:text-purple-300 font-black text-sm">Goal Coverage</p>
                 <p className="text-purple-700 dark:text-purple-400 text-xs font-medium">
-                  You have <span className="font-black">₱ {clearedDuesAmount.toLocaleString()}</span> already set aside for your monthly dues.
+                  You have <span className="font-black">₱ {clearedDuesAmount.toLocaleString()}</span> already set aside for your monthly goals.
                 </p>
               </div>
            </div>
@@ -207,12 +213,12 @@ const Dashboard: React.FC = () => {
         </div>
 
         <div className="space-y-3">
-          {transactions.length === 0 ? (
+          {externalTransactions.length === 0 ? (
             <div className="bg-gray-50 dark:bg-gray-800/50 rounded-3xl p-12 text-center text-gray-400 font-medium border-2 border-dashed border-gray-100 dark:border-gray-800">
-              No transactions yet
+              No external activity yet
             </div>
           ) : (
-            transactions.slice(0, 5).map((t) => (
+            externalTransactions.slice(0, 5).map((t) => (
               <TransactionItem key={t.id} transaction={t} />
             ))
           )}
@@ -223,20 +229,20 @@ const Dashboard: React.FC = () => {
       <Modal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} title="What is Safe to Spend?">
         <div className="space-y-4 text-gray-600 dark:text-gray-400">
           <p className="font-medium">
-            <span className="font-black text-blue-600">Safe to Spend (STS)</span> is the amount of money you can spend today without worrying about your upcoming bills.
+            <span className="font-black text-blue-600">Safe to Spend (STS)</span> is the amount of money you can spend today without worrying about your upcoming goals.
           </p>
           <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700">
             <p className="text-xs font-black uppercase text-gray-400 mb-2">Calculation:</p>
-            <p className="font-mono text-sm dark:text-gray-200">Total Balance - Remaining Dues = STS</p>
+            <p className="font-mono text-sm dark:text-gray-200">Total Balance - Remaining Goals = STS</p>
           </div>
           <ul className="space-y-3">
             <li className="flex gap-3">
               <div className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 shrink-0" />
-              <p className="text-sm"><span className="font-bold text-gray-900 dark:text-gray-100">Green Status:</span> You're within budget! All your monthly bills are covered by your current balance.</p>
+              <p className="text-sm"><span className="font-bold text-gray-900 dark:text-gray-100">Green Status:</span> You're within budget! All your monthly goals are covered by your current balance.</p>
             </li>
             <li className="flex gap-3">
               <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2 shrink-0" />
-              <p className="text-sm"><span className="font-bold text-gray-900 dark:text-gray-100">Red Status:</span> Your current balance is less than your total unpaid dues. Avoid unnecessary spending!</p>
+              <p className="text-sm"><span className="font-bold text-gray-900 dark:text-gray-100">Red Status:</span> Your current balance is less than your total unpaid goals. Avoid unnecessary spending!</p>
             </li>
           </ul>
         </div>
@@ -245,10 +251,10 @@ const Dashboard: React.FC = () => {
       {/* Transaction History Modal */}
       <Modal isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} title="Recent Activity">
         <div className="space-y-3 max-h-[60vh] overflow-y-auto no-scrollbar">
-          {transactions.length === 0 ? (
+          {externalTransactions.length === 0 ? (
             <p className="text-center text-gray-400 py-8">No transactions found.</p>
           ) : (
-            transactions.map((t) => (
+            externalTransactions.map((t) => (
               <TransactionItem key={t.id} transaction={t} />
             ))
           )}
