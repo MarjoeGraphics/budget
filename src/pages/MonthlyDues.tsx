@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react'
-import { useBudgetStore, type Due, type Transaction } from '../store/useBudgetStore'
-import { Plus, CheckCircle2, Circle, HandCoins, Calendar as CalendarIcon, AlertCircle, History, X, Info } from 'lucide-react'
+import { useBudgetStore, type Due } from '../store/useBudgetStore'
+import { Plus, CheckCircle2, Circle, HandCoins, Calendar as CalendarIcon, AlertCircle, Trash2, Info, ChevronDown, ChevronUp } from 'lucide-react'
 import Calendar from '../components/calendar/Calendar'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const MonthlyDues: React.FC = () => {
-  const { dues, transactions, addDue, toggleDuePaid, deleteDue, contributeToDue, checkAndResetMonthlyDues } = useBudgetStore()
+  const { dues, addDue, toggleDuePaid, deleteDue, contributeToDue, checkAndResetMonthlyDues } = useBudgetStore()
   const [isAdding, setIsAdding] = useState(false)
   const [newDue, setNewDue] = useState({ label: '', amount: '', dayOfMonth: new Date().getDate().toString() })
 
   const [isContributing, setIsContributing] = useState<string | null>(null)
   const [contributionAmount, setContributionAmount] = useState('')
 
-  const [selectedDueId, setSelectedDueId] = useState<string | null>(null)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
 
   useEffect(() => {
     checkAndResetMonthlyDues()
@@ -40,8 +40,10 @@ const MonthlyDues: React.FC = () => {
   }
 
   const today = new Date().getDate()
-  const selectedDue = dues.find(d => d.id === selectedDueId)
-  const dueHistory = transactions.filter(t => t.dueId === selectedDueId)
+
+  const toggleExpand = (id: string) => {
+    setExpandedId(expandedId === id ? null : id)
+  }
 
   return (
     <div className="p-6 pb-24">
@@ -135,10 +137,11 @@ const MonthlyDues: React.FC = () => {
                 isOverdue={isOverdue}
                 isCrunch={isCrunch}
                 today={today}
-                onToggle={() => toggleDuePaid(due.id)}
+                isExpanded={expandedId === due.id}
+                onToggleExpand={() => toggleExpand(due.id)}
+                onTogglePaid={() => toggleDuePaid(due.id)}
                 onDelete={() => deleteDue(due.id)}
                 onContribute={() => setIsContributing(due.id)}
-                onClick={() => setSelectedDueId(due.id)}
               />
             )
           })
@@ -175,18 +178,6 @@ const MonthlyDues: React.FC = () => {
           </div>
         )}
       </AnimatePresence>
-
-      {/* Detail Modal (Saving Coach) */}
-      <AnimatePresence>
-        {selectedDue && (
-          <CommitmentDetailModal
-            due={selectedDue}
-            history={dueHistory}
-            onClose={() => setSelectedDueId(null)}
-            today={today}
-          />
-        )}
-      </AnimatePresence>
     </div>
   )
 }
@@ -196,19 +187,30 @@ interface CommitmentItemProps {
   isOverdue: boolean
   isCrunch: boolean
   today: number
-  onToggle: () => void
+  isExpanded: boolean
+  onToggleExpand: () => void
+  onTogglePaid: () => void
   onDelete: () => void
   onContribute: () => void
-  onClick: () => void
 }
 
-const CommitmentItem: React.FC<CommitmentItemProps> = ({ due, isOverdue, isCrunch, onToggle, onDelete, onContribute, onClick }) => {
+const CommitmentItem: React.FC<CommitmentItemProps> = ({
+  due, isOverdue, isCrunch, today, isExpanded,
+  onToggleExpand, onTogglePaid, onDelete, onContribute
+}) => {
   const progress = Math.min((due.contributedAmount / due.amount) * 100, 100)
+  const amountRemaining = due.amount - due.contributedAmount
+  const daysLeft = due.dayOfMonth - today
+
+  // Daily saving target: (Total - Saved) / (Days left until Due Date)
+  // If daysLeft is 0 or less, target is the full remaining amount.
+  const dailyTarget = !due.isPaid && amountRemaining > 0
+    ? (daysLeft > 0 ? amountRemaining / daysLeft : amountRemaining)
+    : 0
 
   return (
     <div
-      onClick={onClick}
-      className={`p-5 rounded-[2rem] transition-all border-2 cursor-pointer active:scale-[0.98] ${
+      className={`rounded-[2rem] transition-all border-2 overflow-hidden ${
         due.isPaid
           ? 'bg-green-50/50 dark:bg-green-900/10 border-green-100 dark:border-green-900/30'
           : isOverdue
@@ -218,10 +220,14 @@ const CommitmentItem: React.FC<CommitmentItemProps> = ({ due, isOverdue, isCrunc
               : 'bg-white dark:bg-gray-800 border-gray-50 dark:border-gray-700 shadow-sm'
       }`}
     >
-      <div className="flex items-center justify-between mb-4">
+      {/* Header View */}
+      <div
+        onClick={onToggleExpand}
+        className="p-5 flex items-center justify-between cursor-pointer active:scale-[0.99] transition-transform"
+      >
         <div className="flex items-center gap-4">
           <button
-            onClick={(e) => { e.stopPropagation(); onToggle(); }}
+            onClick={(e) => { e.stopPropagation(); onTogglePaid(); }}
             className={`transition-colors ${due.isPaid ? 'text-green-500' : isOverdue ? 'text-red-500' : isCrunch ? 'text-orange-500' : 'text-gray-300 dark:text-gray-600'}`}
           >
             {due.isPaid ? <CheckCircle2 size={28} strokeWidth={2.5} /> : <Circle size={28} strokeWidth={2.5} />}
@@ -234,146 +240,111 @@ const CommitmentItem: React.FC<CommitmentItemProps> = ({ due, isOverdue, isCrunc
               {isOverdue && <AlertCircle size={14} className="text-red-500" />}
               {isCrunch && <Info size={14} className="text-orange-500" />}
             </div>
-            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-tighter text-gray-400">
-              <CalendarIcon size={10} />
-              Day {due.dayOfMonth}
-              {isOverdue && <span className="text-red-500 ml-1">• OVERDUE</span>}
-            </div>
+            {!isExpanded && (
+              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-tighter text-gray-400">
+                <CalendarIcon size={10} />
+                Day {due.dayOfMonth}
+                {isOverdue && <span className="text-red-500 ml-1">• OVERDUE</span>}
+              </div>
+            )}
           </div>
         </div>
-        <div className="text-right">
-          <p className={`font-black ${due.isPaid ? 'text-green-600' : isOverdue ? 'text-red-600' : ''}`}>
-            ₱ {due.amount.toLocaleString()}
-          </p>
-          <button
-            onClick={(e) => { e.stopPropagation(); onDelete(); }}
-            className="text-[10px] font-bold text-gray-400 hover:text-red-500 uppercase mt-1"
-          >
-            Remove
-          </button>
+        <div className="flex items-center gap-3">
+          <div className="text-right">
+            <p className={`font-black ${due.isPaid ? 'text-green-600' : isOverdue ? 'text-red-600' : ''}`}>
+              ₱ {due.amount.toLocaleString()}
+            </p>
+          </div>
+          <div className="text-gray-400">
+            {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+          </div>
         </div>
       </div>
 
-      <div className="space-y-2">
-        <div className="flex justify-between items-end px-1">
-           <p className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">
-             ₱ {due.contributedAmount.toLocaleString()} / ₱ {due.amount.toLocaleString()}
-           </p>
-           <p className={`text-[10px] font-black uppercase ${due.isPaid ? 'text-green-600' : isOverdue ? 'text-red-600' : isCrunch ? 'text-orange-600' : 'text-blue-600'}`}>
-             {Math.round(progress)}%
-           </p>
-        </div>
-        <div className="h-3 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+      {/* Expanded View */}
+      <AnimatePresence>
+        {isExpanded && (
           <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            className={`h-full transition-colors ${due.isPaid ? 'bg-green-500' : isOverdue ? 'bg-red-500' : isCrunch ? 'bg-orange-500' : 'bg-blue-600'}`}
-          />
-        </div>
-        {!due.isPaid && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onContribute(); }}
-            className={`w-full mt-2 py-2 text-[10px] font-black uppercase rounded-xl flex items-center justify-center gap-2 transition-colors ${
-              isOverdue
-                ? 'bg-red-500 text-white shadow-lg shadow-red-500/20'
-                : isCrunch
-                  ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20'
-                  : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-600 dark:text-blue-400'
-            }`}
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
           >
-            <HandCoins size={12} /> Contribute
-          </button>
+            <div className="px-5 pb-5 pt-0 space-y-4 border-t border-gray-100 dark:border-gray-700/50 mt-1">
+              {/* Top Row: Date & Delete */}
+              <div className="flex justify-between items-center pt-4">
+                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-500 bg-gray-100 dark:bg-gray-700/50 px-3 py-1.5 rounded-full">
+                  <CalendarIcon size={12} />
+                  Due on Day {due.dayOfMonth}
+                </div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                  className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                >
+                  <Trash2 size={18} />
+                </button>
+              </div>
+
+              {/* Stats Row */}
+              <div className="flex justify-between items-end">
+                <div>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Saved / Total</p>
+                  <p className="font-black text-sm">
+                    ₱ {due.contributedAmount.toLocaleString()} / <span className="opacity-40">₱ {due.amount.toLocaleString()}</span>
+                  </p>
+                </div>
+                <p className={`text-xl font-black ${due.isPaid ? 'text-green-600' : isOverdue ? 'text-red-600' : isCrunch ? 'text-orange-600' : 'text-blue-600'}`}>
+                  {Math.round(progress)}%
+                </p>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="h-4 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${progress}%` }}
+                  className={`h-full transition-colors ${due.isPaid ? 'bg-green-500' : isOverdue ? 'bg-red-500' : isCrunch ? 'bg-orange-500' : 'bg-blue-600'}`}
+                />
+              </div>
+
+              {/* Saving Target Section */}
+              {!due.isPaid && (
+                <div className={`p-4 rounded-2xl text-center flex flex-col items-center gap-1 ${
+                  isOverdue
+                    ? 'bg-red-500 text-white'
+                    : isCrunch
+                      ? 'bg-orange-500 text-white'
+                      : 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                }`}>
+                  <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-80">Daily Saving Target</p>
+                  <p className="text-2xl font-black">
+                    ₱ {Math.ceil(dailyTarget).toLocaleString()}
+                  </p>
+                  <p className="text-[8px] font-bold uppercase opacity-60">
+                    {isOverdue ? 'Due Now' : daysLeft > 0 ? `To save in ${daysLeft} day${daysLeft === 1 ? '' : 's'}` : 'Due Today'}
+                  </p>
+                </div>
+              )}
+
+              {/* Action Button */}
+              {!due.isPaid && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onContribute(); }}
+                  className={`w-full py-4 text-xs font-black uppercase rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-md ${
+                    isOverdue
+                      ? 'bg-white text-red-600'
+                      : isCrunch
+                        ? 'bg-white text-orange-600'
+                        : 'bg-blue-600 text-white'
+                  }`}
+                >
+                  <HandCoins size={16} strokeWidth={3} /> Contribute Now
+                </button>
+              )}
+            </div>
+          </motion.div>
         )}
-      </div>
-    </div>
-  )
-}
-
-const CommitmentDetailModal: React.FC<{ due: Due, history: Transaction[], onClose: () => void, today: number }> = ({ due, history, onClose, today }) => {
-  const amountRemaining = due.amount - due.contributedAmount
-
-  // Logic for Days Left and Overdue
-  const isOverdue = !due.isPaid && today > due.dayOfMonth
-  const daysLeft = due.dayOfMonth - today
-
-  const dailyTarget = !isOverdue && daysLeft > 0 ? amountRemaining / daysLeft : 0
-
-  return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[120] flex items-end justify-center">
-      <motion.div
-        initial={{ y: '100%' }}
-        animate={{ y: 0 }}
-        exit={{ y: '100%' }}
-        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        className="bg-white dark:bg-gray-900 w-full max-w-md rounded-t-[2.5rem] p-8 shadow-2xl max-h-[90vh] overflow-y-auto no-scrollbar"
-      >
-        <div className="flex justify-between items-start mb-8">
-          <div>
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Saving Coach</p>
-            <h2 className="text-3xl font-black tracking-tight">{due.label}</h2>
-          </div>
-          <button onClick={onClose} className="p-3 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500">
-            <X size={24} strokeWidth={3} />
-          </button>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4 mb-8">
-          <div className="bg-gray-50 dark:bg-gray-800/50 p-5 rounded-3xl border border-gray-100 dark:border-gray-700">
-             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Remaining</p>
-             <p className="text-xl font-black">₱ {amountRemaining.toLocaleString()}</p>
-          </div>
-          <div className={`p-5 rounded-3xl border ${isOverdue ? 'bg-red-50 dark:bg-red-900/10 border-red-100 dark:border-red-900/30' : 'bg-gray-50 dark:bg-gray-800/50 border-gray-100 dark:border-gray-700'}`}>
-             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Time Left</p>
-             <p className={`text-xl font-black ${isOverdue ? 'text-red-600' : ''}`}>
-               {isOverdue ? 'Overdue' : `${daysLeft} Day${daysLeft === 1 ? '' : 's'}`}
-             </p>
-          </div>
-        </div>
-
-        <div className={`p-6 rounded-[2rem] mb-8 text-center border-4 ${isOverdue ? 'bg-red-600 border-red-500 text-white shadow-xl shadow-red-500/20' : 'bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-900/20'}`}>
-           {isOverdue ? (
-             <div>
-               <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-1 opacity-80">Action Required</p>
-               <p className="text-2xl font-black uppercase tracking-tight">DUE NOW: ₱ {amountRemaining.toLocaleString()}</p>
-             </div>
-           ) : (
-             <div>
-               <p className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-[0.2em] mb-1">Daily Target</p>
-               <p className="text-3xl font-black text-blue-700 dark:text-blue-300 tracking-tighter">₱ {dailyTarget.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-               <p className="text-[10px] font-medium text-blue-600/60 dark:text-blue-400/60 uppercase mt-1">to reach goal on time</p>
-             </div>
-           )}
-        </div>
-
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 px-1">
-             <History size={16} className="text-gray-400" />
-             <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Contribution History</h3>
-          </div>
-
-          <div className="space-y-3">
-             {history.length === 0 ? (
-               <p className="text-sm text-center py-6 text-gray-400 italic">No contributions recorded yet.</p>
-             ) : (
-               history.map(t => (
-                 <div key={t.id} className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700">
-                    <div>
-                       <p className="text-xs font-black uppercase text-gray-500">{new Date(t.date).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })}</p>
-                    </div>
-                    <p className="font-black text-red-500">- ₱ {t.amount.toLocaleString()}</p>
-                 </div>
-               ))
-             )}
-          </div>
-        </div>
-
-        <button
-          onClick={onClose}
-          className="w-full mt-8 py-5 bg-gray-950 dark:bg-white text-white dark:text-gray-950 font-black rounded-2xl shadow-xl transition-transform active:scale-[0.98]"
-        >
-          Back to List
-        </button>
-      </motion.div>
+      </AnimatePresence>
     </div>
   )
 }
