@@ -5,8 +5,11 @@ export const useWaterfall = () => {
   const { balance, dues } = useBudgetStore();
 
   const waterfall = useMemo(() => {
-    // 1. Sort dues by Day of Month (primary) and then by Amount (descending)
+    // 1. Sort dues by Priority (primary), then by Day of Month (secondary), then by Amount (descending)
     const sortedDues = [...dues].sort((a, b) => {
+      if (a.priority !== b.priority) {
+        return a.priority - b.priority;
+      }
       if (a.dayOfMonth !== b.dayOfMonth) {
         return a.dayOfMonth - b.dayOfMonth;
       }

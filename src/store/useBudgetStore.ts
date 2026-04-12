@@ -17,6 +17,9 @@ export interface Due {
   amount: number
   isPaid: boolean
   dayOfMonth: number
+  priority: number // 1-5
+  totalTerms?: number
+  currentTerm?: number
 }
 
 export interface Preset {
@@ -156,7 +159,12 @@ export const useBudgetStore = create<BudgetState>()(
         if (currentMonth !== lastResetMonth) {
           set({
             lastResetMonth: currentMonth,
-            dues: dues.map(d => ({ ...d, isPaid: false }))
+            dues: dues.map(d => {
+              const updatedTerm = (d.isPaid && d.currentTerm !== undefined)
+                ? d.currentTerm + 1
+                : d.currentTerm
+              return { ...d, isPaid: false, currentTerm: updatedTerm }
+            })
           })
         }
       },

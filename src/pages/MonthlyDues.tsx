@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useBudgetStore, type Due } from '../store/useBudgetStore'
-import { Plus, CheckCircle2, Circle, Calendar as CalendarIcon, AlertCircle, Trash2, Info, ChevronDown, ChevronUp, Check, Edit3, X } from 'lucide-react'
+import { Plus, CheckCircle2, Circle, Calendar as CalendarIcon, AlertCircle, Trash2, Info, ChevronDown, ChevronUp, Check, Edit3, X, Flag, Layers, Milestone } from 'lucide-react'
 import Calendar from '../components/calendar/Calendar'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useWaterfall } from '../hooks/useWaterfall'
@@ -9,7 +9,14 @@ const MonthlyDues: React.FC = () => {
   const { dues, addDue, toggleDuePaid, deleteDue, updateDue, checkAndResetMonthlyDues } = useBudgetStore()
   const waterfall = useWaterfall()
   const [isAdding, setIsAdding] = useState(false)
-  const [newDue, setNewDue] = useState({ label: '', amount: '', dayOfMonth: new Date().getDate().toString() })
+  const [newDue, setNewDue] = useState({
+    label: '',
+    amount: '',
+    dayOfMonth: new Date().getDate().toString(),
+    priority: '3',
+    totalTerms: '',
+    currentTerm: '1'
+  })
 
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
@@ -23,9 +30,19 @@ const MonthlyDues: React.FC = () => {
     addDue({
       label: newDue.label,
       amount: parseFloat(newDue.amount),
-      dayOfMonth: parseInt(newDue.dayOfMonth) || 1
+      dayOfMonth: parseInt(newDue.dayOfMonth) || 1,
+      priority: parseInt(newDue.priority) || 3,
+      totalTerms: newDue.totalTerms ? parseInt(newDue.totalTerms) : undefined,
+      currentTerm: newDue.totalTerms ? parseInt(newDue.currentTerm) : undefined
     })
-    setNewDue({ label: '', amount: '', dayOfMonth: new Date().getDate().toString() })
+    setNewDue({
+      label: '',
+      amount: '',
+      dayOfMonth: new Date().getDate().toString(),
+      priority: '3',
+      totalTerms: '',
+      currentTerm: '1'
+    })
     setIsAdding(false)
   }
 
@@ -55,7 +72,23 @@ const MonthlyDues: React.FC = () => {
 
       {isAdding && (
         <form onSubmit={handleAdd} className="mb-8 bg-gray-50 dark:bg-gray-800 p-6 rounded-[2rem] space-y-4 border border-blue-100 dark:border-blue-900/30">
-          <h2 className="font-bold text-sm uppercase tracking-widest text-blue-600 mb-2">New Goal</h2>
+          <div className="flex justify-between items-center mb-2">
+            <h2 className="font-bold text-sm uppercase tracking-widest text-blue-600">New Goal</h2>
+            <div className="flex items-center gap-2">
+              <label className="text-[10px] font-black text-gray-400 uppercase">Priority</label>
+              <select
+                value={newDue.priority}
+                onChange={(e) => setNewDue({ ...newDue, priority: e.target.value })}
+                className="bg-white dark:bg-gray-700 text-[10px] font-black rounded-lg px-2 py-1 outline-none border-none focus:ring-1 focus:ring-blue-500"
+              >
+                <option value="1">1 - Critical</option>
+                <option value="2">2 - Essential</option>
+                <option value="3">3 - Commitment</option>
+                <option value="4">4 - Lifestyle</option>
+                <option value="5">5 - Wishlist</option>
+              </select>
+            </div>
+          </div>
           <div>
             <label className="block text-[10px] font-black text-gray-400 uppercase mb-1 ml-1">Label</label>
             <input
@@ -90,6 +123,29 @@ const MonthlyDues: React.FC = () => {
               />
             </div>
           </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[10px] font-black text-gray-400 uppercase mb-1 ml-1">Total Terms (Optional)</label>
+              <input
+                type="number"
+                value={newDue.totalTerms}
+                onChange={(e) => setNewDue({ ...newDue, totalTerms: e.target.value })}
+                placeholder="e.g. 36"
+                className="w-full bg-white dark:bg-gray-700 border-none rounded-2xl p-4 focus:ring-2 focus:ring-blue-500 outline-none font-medium text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-gray-400 uppercase mb-1 ml-1">Current Term</label>
+              <input
+                type="number"
+                value={newDue.currentTerm}
+                disabled={!newDue.totalTerms}
+                onChange={(e) => setNewDue({ ...newDue, currentTerm: e.target.value })}
+                className={`w-full bg-white dark:bg-gray-700 border-none rounded-2xl p-4 focus:ring-2 focus:ring-blue-500 outline-none font-medium text-sm ${!newDue.totalTerms && 'opacity-50'}`}
+              />
+            </div>
+          </div>
           <div className="flex gap-2 pt-2">
             <button
               type="submit"
@@ -111,31 +167,61 @@ const MonthlyDues: React.FC = () => {
       {/* List Section */}
       <section className="space-y-4">
         <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Active Monthly Goals</h2>
-        {dues.length === 0 ? (
+        {dues.filter(d => !d.totalTerms || !d.currentTerm || d.currentTerm <= d.totalTerms).length === 0 ? (
           <div className="bg-gray-50 dark:bg-gray-800/50 rounded-3xl p-12 text-center text-gray-400 font-medium border-2 border-dashed border-gray-100 dark:border-gray-800">
-            No goals set yet.
+            No active goals.
           </div>
         ) : (
-          dues.sort((a, b) => a.dayOfMonth - b.dayOfMonth).map((due) => {
-            const isOverdue = !due.isPaid && today > due.dayOfMonth
-            const isCrunch = !due.isPaid && !isOverdue && (due.dayOfMonth >= today && due.dayOfMonth <= today + 3)
+          dues
+            .filter(d => !d.totalTerms || !d.currentTerm || d.currentTerm <= d.totalTerms)
+            .sort((a, b) => {
+              if (a.priority !== b.priority) return a.priority - b.priority
+              return a.dayOfMonth - b.dayOfMonth
+            })
+            .map((due) => {
+              const isOverdue = !due.isPaid && today > due.dayOfMonth
+              const isCrunch = !due.isPaid && !isOverdue && (due.dayOfMonth >= today && due.dayOfMonth <= today + 3)
 
-            return (
-              <CommitmentItem
-                key={due.id}
-                due={due}
-                contributedAmount={waterfall[due.id] || 0}
-                isOverdue={isOverdue}
-                isCrunch={isCrunch}
-                today={today}
-                isExpanded={expandedId === due.id}
-                onToggleExpand={() => toggleExpand(due.id)}
-                onTogglePaid={() => toggleDuePaid(due.id)}
-                onDelete={() => deleteDue(due.id)}
-                onUpdate={(updates) => updateDue(due.id, updates)}
-              />
-            )
-          })
+              return (
+                <CommitmentItem
+                  key={due.id}
+                  due={due}
+                  contributedAmount={waterfall[due.id] || 0}
+                  isOverdue={isOverdue}
+                  isCrunch={isCrunch}
+                  today={today}
+                  isExpanded={expandedId === due.id}
+                  onToggleExpand={() => toggleExpand(due.id)}
+                  onTogglePaid={() => toggleDuePaid(due.id)}
+                  onDelete={() => deleteDue(due.id)}
+                  onUpdate={(updates) => updateDue(due.id, updates)}
+                />
+              )
+            })
+        )}
+
+        {/* Completed Section */}
+        {dues.filter(d => d.totalTerms && d.currentTerm && d.currentTerm > d.totalTerms).length > 0 && (
+          <div className="pt-8 space-y-4">
+            <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Completed Roadmaps</h2>
+            {dues
+              .filter(d => d.totalTerms && d.currentTerm && d.currentTerm > d.totalTerms)
+              .map((due) => (
+                <CommitmentItem
+                  key={due.id}
+                  due={due}
+                  contributedAmount={due.amount}
+                  isOverdue={false}
+                  isCrunch={false}
+                  today={today}
+                  isExpanded={expandedId === due.id}
+                  onToggleExpand={() => toggleExpand(due.id)}
+                  onTogglePaid={() => {}} // Can't toggle completed
+                  onDelete={() => deleteDue(due.id)}
+                  onUpdate={(updates) => updateDue(due.id, updates)}
+                />
+              ))}
+          </div>
         )}
       </section>
     </div>
@@ -163,10 +249,14 @@ const CommitmentItem: React.FC<CommitmentItemProps> = ({
   const [editFields, setEditFields] = useState({
     label: due.label,
     amount: due.amount.toString(),
-    dayOfMonth: due.dayOfMonth.toString()
+    dayOfMonth: due.dayOfMonth.toString(),
+    priority: due.priority.toString(),
+    totalTerms: due.totalTerms?.toString() || '',
+    currentTerm: due.currentTerm?.toString() || ''
   })
 
-  const isFunded = due.isPaid || contributedAmount >= due.amount
+  const isCompleted = due.totalTerms && due.currentTerm && due.currentTerm > due.totalTerms
+  const isFunded = due.isPaid || contributedAmount >= due.amount || isCompleted
   const surplus = contributedAmount > due.amount ? contributedAmount - due.amount : 0
   const rawProgress = (contributedAmount / due.amount) * 100
   const progress = Math.min(rawProgress, 100)
@@ -181,15 +271,46 @@ const CommitmentItem: React.FC<CommitmentItemProps> = ({
     onUpdate({
       label: editFields.label,
       amount: parseFloat(editFields.amount),
-      dayOfMonth: parseInt(editFields.dayOfMonth)
+      dayOfMonth: parseInt(editFields.dayOfMonth),
+      priority: parseInt(editFields.priority),
+      totalTerms: editFields.totalTerms ? parseInt(editFields.totalTerms) : undefined,
+      currentTerm: editFields.totalTerms ? parseInt(editFields.currentTerm) : undefined
     })
     setIsEditing(false)
+  }
+
+  const priorityColors: Record<number, string> = {
+    1: 'bg-red-500',
+    2: 'bg-orange-500',
+    3: 'bg-blue-600',
+    4: 'bg-teal-500',
+    5: 'bg-slate-500'
+  }
+
+  const priorityLabels: Record<number, string> = {
+    1: 'Critical',
+    2: 'Essential',
+    3: 'Commitment',
+    4: 'Lifestyle',
+    5: 'Wishlist'
+  }
+
+  const getFreedomDate = () => {
+    if (!due.totalTerms || !due.currentTerm) return null
+    const monthsRemaining = due.totalTerms - due.currentTerm
+    if (monthsRemaining < 0) return 'Completed'
+
+    const d = new Date()
+    d.setMonth(d.getMonth() + monthsRemaining)
+    return `Fully paid by ${d.toLocaleDateString('en-PH', { month: 'long', year: 'numeric' })}`
   }
 
   return (
     <div
       className={`rounded-[2rem] transition-all border-2 overflow-hidden ${
-        due.isPaid || isFunded
+        isCompleted
+          ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-900/30 grayscale opacity-60'
+          : due.isPaid || isFunded
           ? 'bg-green-50/50 dark:bg-green-900/10 border-green-100 dark:border-green-900/30'
           : isOverdue
             ? 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-900/30'
@@ -212,9 +333,10 @@ const CommitmentItem: React.FC<CommitmentItemProps> = ({
           </button>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className={`font-black text-sm ${due.isPaid || isFunded ? 'text-green-700 dark:text-green-400' : isOverdue ? 'text-red-700 dark:text-red-400' : isCrunch ? 'text-orange-700 dark:text-orange-400' : ''}`}>
+              <h3 className={`font-black text-sm ${isCompleted ? 'text-emerald-700 dark:text-emerald-400' : due.isPaid || isFunded ? 'text-green-700 dark:text-green-400' : isOverdue ? 'text-red-700 dark:text-red-400' : isCrunch ? 'text-orange-700 dark:text-orange-400' : ''}`}>
                 {due.label}
               </h3>
+              <div className={`w-2 h-2 rounded-full ${priorityColors[due.priority]}`} />
               {isOverdue && <AlertCircle size={14} className="text-red-500" />}
               {isCrunch && <Info size={14} className="text-orange-500" />}
             </div>
@@ -262,14 +384,30 @@ const CommitmentItem: React.FC<CommitmentItemProps> = ({
             <div className="px-5 pb-5 pt-0 space-y-4 border-t border-gray-100 dark:border-gray-700/50 mt-1">
               {isEditing ? (
                 <div className="space-y-4 pt-4">
-                  <div>
-                    <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Label</label>
-                    <input
-                      type="text"
-                      value={editFields.label}
-                      onChange={(e) => setEditFields({ ...editFields, label: e.target.value })}
-                      className="w-full bg-gray-50 dark:bg-gray-700 p-3 rounded-xl border-none outline-none font-bold text-sm"
-                    />
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Label</label>
+                      <input
+                        type="text"
+                        value={editFields.label}
+                        onChange={(e) => setEditFields({ ...editFields, label: e.target.value })}
+                        className="bg-gray-50 dark:bg-gray-700 p-3 rounded-xl border-none outline-none font-bold text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Priority</label>
+                      <select
+                        value={editFields.priority}
+                        onChange={(e) => setEditFields({ ...editFields, priority: e.target.value })}
+                        className="w-full bg-gray-50 dark:bg-gray-700 p-3 rounded-xl border-none outline-none font-bold text-xs"
+                      >
+                        <option value="1">L1 - Critical</option>
+                        <option value="2">L2 - Essential</option>
+                        <option value="3">L3 - Commitment</option>
+                        <option value="4">L4 - Lifestyle</option>
+                        <option value="5">L5 - Wishlist</option>
+                      </select>
+                    </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
@@ -291,6 +429,27 @@ const CommitmentItem: React.FC<CommitmentItemProps> = ({
                       />
                     </div>
                   </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Total Terms</label>
+                      <input
+                        type="number"
+                        value={editFields.totalTerms}
+                        onChange={(e) => setEditFields({ ...editFields, totalTerms: e.target.value })}
+                        className="w-full bg-gray-50 dark:bg-gray-700 p-3 rounded-xl border-none outline-none font-bold text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Current Term</label>
+                      <input
+                        type="number"
+                        value={editFields.currentTerm}
+                        onChange={(e) => setEditFields({ ...editFields, currentTerm: e.target.value })}
+                        className="w-full bg-gray-50 dark:bg-gray-700 p-3 rounded-xl border-none outline-none font-bold text-sm"
+                      />
+                    </div>
+                  </div>
                   <div className="flex gap-2">
                     <button onClick={handleSaveEdit} className="flex-1 py-3 bg-blue-600 text-white font-black rounded-xl text-xs uppercase">Save Changes</button>
                     <button onClick={() => setIsEditing(false)} className="px-4 py-3 bg-gray-100 dark:bg-gray-700 font-black rounded-xl text-xs uppercase"><X size={16} /></button>
@@ -298,10 +457,16 @@ const CommitmentItem: React.FC<CommitmentItemProps> = ({
                 </div>
               ) : (
                 <>
-                  <div className="flex justify-between items-center pt-4">
-                    <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-500 bg-gray-100 dark:bg-gray-700/50 px-3 py-1.5 rounded-full">
-                      <CalendarIcon size={12} />
-                      Due on Day {due.dayOfMonth}
+                  <div className="flex justify-between items-start pt-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-500 bg-gray-100 dark:bg-gray-700/50 px-3 py-1.5 rounded-full w-fit">
+                        <CalendarIcon size={12} />
+                        Due on Day {due.dayOfMonth}
+                      </div>
+                      <div className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white ${priorityColors[due.priority]} px-3 py-1.5 rounded-full w-fit shadow-lg shadow-black/5`}>
+                        <Flag size={12} strokeWidth={3} />
+                        Priority {due.priority}: {priorityLabels[due.priority]}
+                      </div>
                     </div>
                     <div className="flex gap-1">
                       <button
@@ -351,8 +516,37 @@ const CommitmentItem: React.FC<CommitmentItemProps> = ({
                     />
                   </div>
 
+                  {due.totalTerms && due.currentTerm && (
+                    <div className="bg-gray-50 dark:bg-gray-900/30 p-5 rounded-3xl border border-gray-100 dark:border-gray-800 space-y-3">
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                           <Layers size={14} className="text-blue-500" />
+                           <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Roadmap Progress</p>
+                        </div>
+                        <p className="text-[10px] font-black uppercase text-blue-600">Month {due.currentTerm} of {due.totalTerms}</p>
+                      </div>
+
+                      <div className="h-1.5 w-full bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${Math.min((due.currentTerm / due.totalTerms) * 100, 100)}%` }}
+                          className="h-full bg-blue-500"
+                        />
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-1">
+                        <Milestone size={14} className="text-emerald-500" />
+                        <p className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-tighter">
+                          {getFreedomDate()}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   <div className={`p-4 rounded-2xl text-center flex flex-col items-center gap-1 ${
-                    isFunded
+                    isCompleted
+                      ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20'
+                      : isFunded
                       ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-2 border-emerald-100 dark:border-emerald-900/30'
                       : isOverdue
                         ? 'bg-red-500 text-white'
@@ -360,7 +554,12 @@ const CommitmentItem: React.FC<CommitmentItemProps> = ({
                           ? 'bg-orange-500 text-white'
                           : 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
                   }`}>
-                    {isFunded ? (
+                    {isCompleted ? (
+                      <div className="flex items-center gap-2">
+                         <CheckCircle2 size={24} />
+                         <p className="text-sm font-black uppercase tracking-[0.2em]">Goal Completed</p>
+                      </div>
+                    ) : isFunded ? (
                       <div className="flex items-center gap-2">
                         <div className="bg-emerald-500 text-white p-1 rounded-full">
                           <Check size={14} strokeWidth={4} />
