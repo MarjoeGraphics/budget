@@ -50,7 +50,7 @@ const Settings: React.FC = () => {
         const json = JSON.parse(event.target?.result as string)
         importData(json)
         alert('Data imported successfully!')
-      } catch (err) {
+      } catch {
         alert('Failed to import data. Please check the file format.')
       }
     }

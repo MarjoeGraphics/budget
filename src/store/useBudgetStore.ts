@@ -7,6 +7,7 @@ export interface Transaction {
   amount: number
   date: number
   type: 'income' | 'expense'
+  dueId?: string // Optional link to a specific due
 }
 
 export interface Due {
@@ -99,7 +100,7 @@ export const useBudgetStore = create<BudgetState>()(
       })),
 
       updateDue: (id, updates) => set((state) => ({
-        dues: state.dues.map(d => d.id === id ? { ...d, ...updates } : d)
+        dues: state.dues.map(d => id === d.id ? { ...d, ...updates } : d)
       })),
 
       contributeToDue: (id, amount) => set((state) => {
@@ -122,7 +123,8 @@ export const useBudgetStore = create<BudgetState>()(
             label: `Contr: ${targetDue.label}`,
             amount: amount,
             date: Date.now(),
-            type: 'expense'
+            type: 'expense',
+            dueId: id
           }
           return {
             dues: updatedDues,
