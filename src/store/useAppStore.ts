@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-type Tab = 'dashboard' | 'dues' | 'settings'
+type Tab = 'home' | 'dues' | 'settings'
 type Theme = 'light' | 'dark'
 
 interface AppState {
@@ -18,8 +18,8 @@ interface AppState {
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
-      activeTab: 'dashboard',
-      prevTab: 'dashboard',
+      activeTab: 'home',
+      prevTab: 'home',
       theme: 'light',
       isModalOpen: false,
       setActiveTab: (tab) => {

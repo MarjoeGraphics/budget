@@ -1,11 +1,11 @@
 import { useAppStore } from './store/useAppStore'
 import Layout from './components/layout/Layout'
-import Dashboard from './pages/Dashboard'
+import Home from './pages/Home'
 import MonthlyDues from './pages/MonthlyDues'
 import Settings from './pages/Settings'
 import { AnimatePresence, motion } from 'framer-motion'
 
-const tabOrder = ['dashboard', 'dues', 'settings']
+const tabOrder = ['home', 'dues', 'settings']
 
 function App() {
   const { activeTab, prevTab } = useAppStore()
@@ -35,14 +35,14 @@ function App() {
 
   const renderTab = () => {
     switch (activeTab) {
-      case 'dashboard':
-        return <Dashboard />
+      case 'home':
+        return <Home />
       case 'dues':
         return <MonthlyDues />
       case 'settings':
         return <Settings />
       default:
-        return <Dashboard />
+        return <Home />
     }
   }
 
