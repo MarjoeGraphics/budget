@@ -1,6 +1,6 @@
 import { useAppStore } from './store/useAppStore'
 import Layout from './components/layout/Layout'
-import Dashboard from './pages/Dashboard'
+import Home from './pages/Home'
 import MonthlyDues from './pages/MonthlyDues'
 import Settings from './pages/Settings'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -36,7 +36,7 @@ function App() {
   const renderTab = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <Dashboard />
+        return <Home />
       case 'dues':
         return <MonthlyDues />
       case 'settings':
