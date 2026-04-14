@@ -12,7 +12,7 @@ const BottomNavbar: React.FC = () => {
   const { activeTab, setActiveTab } = useAppStore()
 
   const tabs = [
-    { id: 'dashboard', label: 'Home', icon: LayoutDashboard },
+    { id: 'home', label: 'Home', icon: LayoutDashboard },
     { id: 'dues', label: 'Monthly Dues', icon: ReceiptText },
     { id: 'settings', label: 'Settings', icon: Settings },
   ] as const
