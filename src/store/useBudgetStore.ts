@@ -41,7 +41,7 @@ interface BudgetState {
   // Actions
   setBalance: (amount: number) => void
   setInitialBalance: (amount: number) => void
-  addTransaction: (transaction: Omit<Transaction, 'id' | 'date'>) => void
+  addTransaction: (transaction: Omit<Transaction, 'id' | 'date'> & { date?: number }) => void
 
   addDue: (due: Omit<Due, 'id' | 'isPaid'>) => void
   toggleDuePaid: (id: string) => void
@@ -79,10 +79,11 @@ export const useBudgetStore = create<BudgetState>()(
       }),
 
       addTransaction: (t) => set((state) => {
+        const { date, ...rest } = t
         const newTransaction: Transaction = {
-          ...t,
+          ...rest,
           id: crypto.randomUUID(),
-          date: Date.now()
+          date: date || Date.now()
         }
 
         let newBalance = state.balance
