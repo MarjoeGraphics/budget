@@ -1,5 +1,5 @@
 import React from 'react'
-import { LayoutDashboard, ReceiptText, Settings } from 'lucide-react'
+import { LayoutDashboard, ReceiptText, Settings, PieChart } from 'lucide-react'
 import { useAppStore } from '../../store/useAppStore'
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
@@ -13,7 +13,8 @@ const BottomNavbar: React.FC = () => {
 
   const tabs = [
     { id: 'home', label: 'Home', icon: LayoutDashboard },
-    { id: 'dues', label: 'Monthly Dues', icon: ReceiptText },
+    { id: 'stats', label: 'Stats', icon: PieChart },
+    { id: 'dues', label: 'Dues', icon: ReceiptText },
     { id: 'settings', label: 'Settings', icon: Settings },
   ] as const
 

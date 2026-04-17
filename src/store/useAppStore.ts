@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-type Tab = 'home' | 'dues' | 'settings'
+type Tab = 'home' | 'stats' | 'dues' | 'settings'
 type Theme = 'light' | 'dark'
 
 interface AppState {
