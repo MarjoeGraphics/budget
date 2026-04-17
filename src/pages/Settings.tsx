@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 const Settings: React.FC = () => {
   const { theme, toggleTheme } = useAppStore()
-  const { presets, addPreset, deletePreset, clearAllData, importData } = useBudgetStore()
+  const { presets, addPreset, deletePreset, clearAllData, importData, initialBalance, setInitialBalance } = useBudgetStore()
 
   const [isAddingPreset, setIsAddingPreset] = useState(false)
   const [newPreset, setNewPreset] = useState({ label: '', amount: '', type: 'expense' as 'income' | 'expense', color: '#3b82f6' })
@@ -77,8 +77,28 @@ const Settings: React.FC = () => {
 
       <div className="space-y-8">
         <section>
+          <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 ml-1">Financial Setup</h2>
+          <div className="bg-white dark:bg-gray-800 rounded-[2rem] p-6 shadow-sm border border-gray-50 dark:border-gray-700 space-y-4">
+             <div>
+                <label className="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1">Starting Balance</label>
+                <div className="relative">
+                   <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-gray-400">₱</span>
+                   <input
+                     type="number"
+                     value={initialBalance}
+                     onChange={(e) => setInitialBalance(parseFloat(e.target.value) || 0)}
+                     className="w-full bg-gray-50 dark:bg-gray-900 border-none rounded-2xl p-4 pl-8 focus:ring-2 focus:ring-blue-500 outline-none font-bold text-lg"
+                     placeholder="0.00"
+                   />
+                </div>
+                <p className="text-[10px] text-gray-400 mt-2 ml-1 leading-tight">This is your starting point. All income and expenses will be added to or subtracted from this amount.</p>
+             </div>
+          </div>
+        </section>
+
+        <section>
           <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 ml-1">Appearance</h2>
-          <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+          <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl p-4 flex items-center justify-between shadow-sm border border-gray-50 dark:border-gray-700">
             <div className="flex items-center gap-3">
               {theme === 'dark' ? <Moon size={20} className="text-blue-400" /> : <Sun size={20} className="text-orange-500" />}
               <span className="font-bold text-sm">Dark Mode</span>

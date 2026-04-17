@@ -32,6 +32,7 @@ export interface Preset {
 
 interface BudgetState {
   balance: number
+  initialBalance: number
   transactions: Transaction[]
   dues: Due[]
   presets: Preset[]
@@ -39,6 +40,7 @@ interface BudgetState {
 
   // Actions
   setBalance: (amount: number) => void
+  setInitialBalance: (amount: number) => void
   addTransaction: (transaction: Omit<Transaction, 'id' | 'date'>) => void
 
   addDue: (due: Omit<Due, 'id' | 'isPaid'>) => void
@@ -60,12 +62,21 @@ export const useBudgetStore = create<BudgetState>()(
   persist(
     (set, get) => ({
       balance: 0,
+      initialBalance: 0,
       transactions: [],
       dues: [],
       presets: [],
       lastResetMonth: new Date().getMonth(),
 
       setBalance: (amount) => set({ balance: amount }),
+
+      setInitialBalance: (amount) => set((state) => {
+        const diff = amount - state.initialBalance
+        return {
+          initialBalance: amount,
+          balance: state.balance + diff
+        }
+      }),
 
       addTransaction: (t) => set((state) => {
         const newTransaction: Transaction = {
@@ -171,6 +182,7 @@ export const useBudgetStore = create<BudgetState>()(
 
       clearAllData: () => set({
         balance: 0,
+        initialBalance: 0,
         transactions: [],
         dues: [],
         presets: [],
