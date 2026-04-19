@@ -58,6 +58,8 @@ interface BudgetState {
   importData: (data: Partial<BudgetState>) => void
 }
 
+const round = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100
+
 export const useBudgetStore = create<BudgetState>()(
   persist(
     (set, get) => ({
@@ -71,31 +73,34 @@ export const useBudgetStore = create<BudgetState>()(
       setBalance: (amount) => set({ balance: amount }),
 
       setInitialBalance: (amount) => set((state) => {
-        const diff = amount - state.initialBalance
+        const roundedAmount = round(amount)
+        const diff = roundedAmount - state.initialBalance
         return {
-          initialBalance: amount,
-          balance: state.balance + diff
+          initialBalance: roundedAmount,
+          balance: round(state.balance + diff)
         }
       }),
 
       addTransaction: (t) => set((state) => {
         const { date, ...rest } = t
+        const amount = round(rest.amount)
         const newTransaction: Transaction = {
           ...rest,
+          amount,
           id: crypto.randomUUID(),
           date: date || Date.now()
         }
 
         let newBalance = state.balance
         if (t.type === 'income' || t.type === 'savings') {
-          newBalance += t.amount
+          newBalance += amount
         } else {
-          newBalance -= t.amount
+          newBalance -= amount
         }
 
         return {
           transactions: [newTransaction, ...state.transactions],
-          balance: newBalance,
+          balance: round(newBalance),
         }
       }),
 
@@ -113,11 +118,11 @@ export const useBudgetStore = create<BudgetState>()(
 
         if (isMarkingPaid) {
           // Marking as paid: Record external transaction and reduce balance
-          newBalance -= targetDue.amount
+          newBalance -= round(targetDue.amount)
           newTransactions = [{
             id: crypto.randomUUID(),
             label: `Paid: ${targetDue.label}`,
-            amount: targetDue.amount,
+            amount: round(targetDue.amount),
             date: Date.now(),
             type: 'expense',
             dueId: id
@@ -129,7 +134,7 @@ export const useBudgetStore = create<BudgetState>()(
         }
 
         return {
-          balance: newBalance,
+          balance: round(newBalance),
           transactions: newTransactions,
           dues: state.dues.map(d => {
             if (d.id === id) {
@@ -175,12 +180,7 @@ export const useBudgetStore = create<BudgetState>()(
         if (currentMonth !== lastResetMonth) {
           set({
             lastResetMonth: currentMonth,
-            dues: dues.map(d => {
-              const updatedTerm = (d.isPaid && d.currentTerm !== undefined)
-                ? d.currentTerm + 1
-                : d.currentTerm
-              return { ...d, isPaid: false, currentTerm: updatedTerm }
-            })
+            dues: dues.map(d => ({ ...d, isPaid: false }))
           })
         }
       },

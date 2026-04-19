@@ -51,8 +51,8 @@ const Statistics: React.FC = () => {
     const distribution: Record<string, { value: number, color: string }> = {}
 
     expenseTxs.forEach(t => {
-      const matchingPreset = presets.find(p => p.label === t.label)
-      const category = matchingPreset ? t.label : 'Other'
+      const matchingPreset = presets.find(p => p.label.toLowerCase() === t.label.toLowerCase())
+      const category = matchingPreset ? matchingPreset.label : 'Other'
       const color = matchingPreset ? matchingPreset.color : '#94a3b8'
 
       if (!distribution[category]) {

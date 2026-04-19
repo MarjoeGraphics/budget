@@ -1,13 +1,15 @@
 import { useMemo } from 'react';
 import { useBudgetStore } from '../store/useBudgetStore';
 
+const round = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100
+
 export const useWaterfall = () => {
   const { balance, dues } = useBudgetStore();
 
   const waterfall = useMemo(() => {
     try {
       if (!Array.isArray(dues)) return {};
-      const safeBalance = typeof balance === 'number' ? balance : 0;
+      const safeBalance = typeof balance === 'number' ? round(balance) : 0;
 
       // 1. Sort dues by Priority (primary), then by Day of Month (secondary), then by Amount (descending)
       const sortedDues = [...dues].sort((a, b) => {
@@ -31,13 +33,13 @@ export const useWaterfall = () => {
 
         if (due.isPaid) {
           // Skip already paid dues - they've already had their cost deducted from balance
-          allocations[due.id] = due.amount ?? 0;
+          allocations[due.id] = round(due.amount ?? 0);
           return;
         }
 
-        const allocation = Math.min(remainingBalance, due.amount ?? 0);
+        const allocation = round(Math.min(remainingBalance, due.amount ?? 0));
         allocations[due.id] = allocation;
-        remainingBalance -= allocation;
+        remainingBalance = round(remainingBalance - allocation);
       });
 
       return allocations;

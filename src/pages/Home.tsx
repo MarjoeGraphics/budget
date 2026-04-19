@@ -21,22 +21,24 @@ const Home: React.FC = () => {
   const safeToSpend = balance - dueLeft
   const externalTransactions = useMemo(() => transactions.filter(t => !t.isInternal), [transactions])
 
-  // Stats Calculations
-  const todayStart = new Date().setHours(0, 0, 0, 0)
-  const last7DaysStart = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).getTime()
-  const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime()
-
+  // Stats Calculations (using local date strings for PST/Philippines consistency)
   const stats = useMemo(() => {
+    const now = new Date()
+    const todayStr = now.toLocaleDateString('en-PH')
+
+    const last7Days = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+
     const getExpenses = (txs: Transaction[]) => txs
       .filter(t => t.type === 'expense')
       .reduce((acc, t) => acc + t.amount, 0)
 
     return {
-      today: getExpenses(externalTransactions.filter(t => new Date(t.date).setHours(0, 0, 0, 0) === todayStart)),
-      week: getExpenses(externalTransactions.filter(t => t.date >= last7DaysStart)),
-      month: getExpenses(externalTransactions.filter(t => t.date >= startOfMonth)),
+      today: getExpenses(externalTransactions.filter(t => new Date(t.date).toLocaleDateString('en-PH') === todayStr)),
+      week: getExpenses(externalTransactions.filter(t => t.date >= last7Days.getTime())),
+      month: getExpenses(externalTransactions.filter(t => t.date >= startOfMonth.getTime())),
     }
-  }, [externalTransactions, todayStart, last7DaysStart, startOfMonth])
+  }, [externalTransactions])
 
   // Chart Logic
   const chartData = useMemo(() => {
