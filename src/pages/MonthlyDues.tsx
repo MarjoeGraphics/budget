@@ -175,6 +175,7 @@ const MonthlyDues: React.FC = () => {
           dues
             .filter(d => !d.totalTerms || !d.currentTerm || d.currentTerm <= d.totalTerms)
             .sort((a, b) => {
+              if (a.isPaid !== b.isPaid) return a.isPaid ? 1 : -1
               if (a.priority !== b.priority) return a.priority - b.priority
               return a.dayOfMonth - b.dayOfMonth
             })
@@ -543,9 +544,11 @@ const CommitmentItem: React.FC<CommitmentItemProps> = ({
                     </div>
                   )}
 
-                  <div className={`p-4 rounded-2xl text-center flex flex-col items-center gap-1 ${
+                  <div className={`p-4 rounded-2xl text-center flex flex-col items-center gap-1 transition-all ${
                     isCompleted
                       ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20'
+                      : due.isPaid
+                      ? 'bg-gray-100 dark:bg-gray-700 text-gray-500'
                       : isFunded
                       ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-2 border-emerald-100 dark:border-emerald-900/30'
                       : isOverdue
@@ -559,13 +562,19 @@ const CommitmentItem: React.FC<CommitmentItemProps> = ({
                          <CheckCircle2 size={24} />
                          <p className="text-sm font-black uppercase tracking-[0.2em]">Goal Completed</p>
                       </div>
-                    ) : isFunded ? (
+                    ) : due.isPaid ? (
                       <div className="flex items-center gap-2">
-                        <div className="bg-emerald-500 text-white p-1 rounded-full">
-                          <Check size={14} strokeWidth={4} />
-                        </div>
-                        <p className="text-sm font-black uppercase tracking-widest">Fully Funded</p>
+                        <CheckCircle2 size={20} />
+                        <p className="text-sm font-black uppercase tracking-widest">Marked as Paid</p>
                       </div>
+                    ) : isFunded ? (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onTogglePaid(); }}
+                        className="flex items-center gap-2 bg-emerald-500 text-white px-6 py-2 rounded-xl shadow-lg shadow-emerald-500/20 active:scale-95 transition-all"
+                      >
+                        <Check size={18} strokeWidth={4} />
+                        <p className="text-xs font-black uppercase tracking-widest">Mark as Paid</p>
+                      </button>
                     ) : (
                       <>
                         <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-80">Needed to save daily</p>

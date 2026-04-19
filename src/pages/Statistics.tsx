@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 import { useBudgetStore } from '../store/useBudgetStore'
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts'
-import { ArrowUpRight, ArrowDownRight, Activity } from 'lucide-react'
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts'
+import { Activity, LayoutGrid, TrendingUp } from 'lucide-react'
 
 const Statistics: React.FC = () => {
   const { transactions, presets } = useBudgetStore()
@@ -13,21 +13,36 @@ const Statistics: React.FC = () => {
     return transactions.filter(t => t.date >= startOfMonth)
   }, [transactions])
 
-  // 2. Calculate text-based metrics
-  const metrics = useMemo(() => {
-    const totalIncome = currentMonthTxs
-      .filter(t => t.type === 'income' || t.type === 'savings')
-      .reduce((acc, t) => acc + t.amount, 0)
+  // 2. Trend Data: Cumulative Income vs. Expenses
+  const trendData = useMemo(() => {
+    const now = new Date()
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+    const data = []
 
-    const totalSpent = currentMonthTxs
-      .filter(t => t.type === 'expense')
-      .reduce((acc, t) => acc + t.amount, 0)
+    let cumIncome = 0
+    let cumExpense = 0
 
-    return {
-      totalIncome,
-      totalSpent,
-      netFlow: totalIncome - totalSpent
+    for (let day = 1; day <= lastDay; day++) {
+      const date = new Date(now.getFullYear(), now.getMonth(), day).setHours(0, 0, 0, 0)
+      const dayTxs = currentMonthTxs.filter(t => new Date(t.date).setHours(0, 0, 0, 0) === date)
+
+      const dayIncome = dayTxs.filter(t => t.type === 'income' || t.type === 'savings').reduce((acc, t) => acc + t.amount, 0)
+      const dayExpense = dayTxs.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0)
+
+      cumIncome += dayIncome
+      cumExpense += dayExpense
+
+      data.push({
+        day,
+        income: cumIncome,
+        expense: cumExpense,
+        net: cumIncome - cumExpense
+      })
+
+      // Stop at current day
+      if (day === now.getDate()) break
     }
+    return data
   }, [currentMonthTxs])
 
   // 3. Dynamic Expenses Distribution (Pie Chart Data)
@@ -36,10 +51,9 @@ const Statistics: React.FC = () => {
     const distribution: Record<string, { value: number, color: string }> = {}
 
     expenseTxs.forEach(t => {
-      // Find matching preset
       const matchingPreset = presets.find(p => p.label === t.label)
       const category = matchingPreset ? t.label : 'Other'
-      const color = matchingPreset ? matchingPreset.color : '#94a3b8' // Slate-400 for Other
+      const color = matchingPreset ? matchingPreset.color : '#94a3b8'
 
       if (!distribution[category]) {
         distribution[category] = { value: 0, color }
@@ -54,7 +68,7 @@ const Statistics: React.FC = () => {
     })).sort((a, b) => b.value - a.value)
   }, [currentMonthTxs, presets])
 
-  const isEmpty = chartData.length === 0
+  const isEmpty = currentMonthTxs.length === 0
 
   return (
     <div className="p-6 space-y-8">
@@ -65,55 +79,91 @@ const Statistics: React.FC = () => {
         </p>
       </header>
 
-      {/* Text-based Metrics */}
-      <section className="grid grid-cols-1 gap-4">
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-[2rem] border border-gray-50 dark:border-gray-700 shadow-sm flex items-center justify-between">
-           <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Income</p>
-              <p className="text-2xl font-black text-green-600">₱ {metrics.totalIncome.toLocaleString()}</p>
+      {/* 1. Trend: Cumulative Net Flow */}
+      <section className="bg-white dark:bg-gray-800 p-8 rounded-[2.5rem] border border-gray-50 dark:border-gray-700 shadow-sm overflow-hidden">
+        <div className="flex items-center gap-2 mb-8">
+           <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-xl text-blue-600">
+              <TrendingUp size={16} strokeWidth={3} />
            </div>
-           <div className="w-12 h-12 bg-green-50 dark:bg-green-900/20 rounded-2xl flex items-center justify-center text-green-600">
-              <ArrowUpRight size={24} strokeWidth={3} />
-           </div>
+           <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Cumulative Trend</h3>
         </div>
-
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-[2rem] border border-gray-50 dark:border-gray-700 shadow-sm flex items-center justify-between">
-           <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Spent</p>
-              <p className="text-2xl font-black text-red-500">₱ {metrics.totalSpent.toLocaleString()}</p>
-           </div>
-           <div className="w-12 h-12 bg-red-50 dark:bg-red-900/20 rounded-2xl flex items-center justify-center text-red-500">
-              <ArrowDownRight size={24} strokeWidth={3} />
-           </div>
-        </div>
-
-        <div className={`p-6 rounded-[2rem] border shadow-sm flex items-center justify-between transition-colors ${
-          metrics.netFlow >= 0
-            ? 'bg-blue-50/50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-900/30'
-            : 'bg-orange-50/50 dark:bg-orange-900/10 border-orange-100 dark:border-orange-900/30'
-        }`}>
-           <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Net Flow</p>
-              <p className={`text-2xl font-black ${metrics.netFlow >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
-                ₱ {metrics.netFlow.toLocaleString()}
-              </p>
-           </div>
-           <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
-             metrics.netFlow >= 0 ? 'bg-blue-600 text-white' : 'bg-orange-500 text-white'
-           }`}>
-              <Activity size={24} strokeWidth={3} />
-           </div>
-        </div>
-      </section>
-
-      {/* Expenses Distribution Pie Chart */}
-      <section className="bg-white dark:bg-gray-800 p-8 rounded-[2.5rem] border border-gray-50 dark:border-gray-700 shadow-sm">
-        <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-8 text-center">Expenses Distribution</h3>
 
         {isEmpty ? (
           <div className="h-64 flex flex-col items-center justify-center text-gray-400 space-y-2">
             <Activity size={48} strokeWidth={1} className="opacity-20" />
-            <p className="text-[10px] font-black uppercase tracking-widest">No expenses recorded this month</p>
+            <p className="text-[10px] font-black uppercase tracking-widest">No data available yet</p>
+          </div>
+        ) : (
+          <div className="h-64 w-full -ml-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={trendData}>
+                <defs>
+                  <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#22c55e" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" opacity={0.5} />
+                <XAxis
+                  dataKey="day"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 9, fontWeight: 900, fill: '#94a3b8' }}
+                  dy={10}
+                />
+                <YAxis
+                  hide
+                  domain={[0, 'auto']}
+                />
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: '1.5rem',
+                    border: 'none',
+                    boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                    fontSize: '11px',
+                    fontWeight: 'bold'
+                  }}
+                  formatter={(value: number) => [`₱ ${value.toLocaleString()}`]}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="income"
+                  stroke="#22c55e"
+                  strokeWidth={3}
+                  fillOpacity={1}
+                  fill="url(#colorIncome)"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="expense"
+                  stroke="#ef4444"
+                  strokeWidth={3}
+                  fillOpacity={1}
+                  fill="url(#colorExpense)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </section>
+
+      {/* 2. Distribution: Expenses Pie */}
+      <section className="bg-white dark:bg-gray-800 p-8 rounded-[2.5rem] border border-gray-50 dark:border-gray-700 shadow-sm">
+        <div className="flex items-center gap-2 mb-8">
+           <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-xl text-purple-600">
+              <LayoutGrid size={16} strokeWidth={3} />
+           </div>
+           <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Expenses Distribution</h3>
+        </div>
+
+        {chartData.length === 0 ? (
+          <div className="h-64 flex flex-col items-center justify-center text-gray-400 space-y-2">
+            <Activity size={48} strokeWidth={1} className="opacity-20" />
+            <p className="text-[10px] font-black uppercase tracking-widest">No expenses recorded</p>
           </div>
         ) : (
           <div className="h-80 w-full">
@@ -123,9 +173,9 @@ const Statistics: React.FC = () => {
                   data={chartData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
+                  innerRadius={65}
+                  outerRadius={85}
+                  paddingAngle={8}
                   dataKey="value"
                   stroke="none"
                 >
@@ -138,11 +188,10 @@ const Statistics: React.FC = () => {
                     borderRadius: '1.5rem',
                     border: 'none',
                     boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
-                    fontSize: '12px',
-                    fontWeight: 'bold',
-                    fontFamily: 'inherit'
+                    fontSize: '11px',
+                    fontWeight: 'bold'
                   }}
-                  formatter={(value: number) => [`₱ ${value.toLocaleString()}`, 'Spent']}
+                  formatter={(value: number) => [`₱ ${value.toLocaleString()}`, 'Total']}
                 />
                 <Legend
                   layout="horizontal"
@@ -150,7 +199,7 @@ const Statistics: React.FC = () => {
                   align="center"
                   iconType="circle"
                   formatter={(value) => (
-                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-tighter ml-1">
+                    <span className="text-[9px] font-black text-gray-500 uppercase tracking-tighter ml-1">
                       {value}
                     </span>
                   )}
