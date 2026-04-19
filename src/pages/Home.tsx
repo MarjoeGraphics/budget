@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { useBudgetStore, type Transaction, type Due } from '../store/useBudgetStore'
-import { TrendingUp, TrendingDown, ChevronRight, X as XIcon } from 'lucide-react'
+import { useBudgetStore, type Transaction } from '../store/useBudgetStore'
+import { TrendingUp, TrendingDown, ChevronRight, X as XIcon, ShieldCheck } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const Home: React.FC = () => {
@@ -61,30 +61,9 @@ const Home: React.FC = () => {
 
   const maxChartVal = Math.max(...chartData.flatMap(d => [d.income, d.expense]), 1)
 
-  // Monthly Preview
-  const upcomingCommitments = useMemo(() => {
-    const todayDay = new Date().getDate()
-    const thisMonth = dues
-      .filter(d => !d.isPaid && d.dayOfMonth >= todayDay)
-      .sort((a, b) => a.dayOfMonth - b.dayOfMonth)
-    const nextMonth = dues
-      .sort((a, b) => a.dayOfMonth - b.dayOfMonth)
-    const merged = [...thisMonth, ...nextMonth]
-    const result: Due[] = []
-    const seen = new Set()
-    for (const d of merged) {
-      if (!seen.has(d.id)) {
-        result.push(d)
-        seen.add(d.id)
-      }
-      if (result.length === 3) break
-    }
-    return result
-  }, [dues])
-
   return (
-    <div className="p-6 space-y-8">
-      <header className="flex justify-between items-end">
+    <div className="p-6 space-y-6">
+      <header className="flex justify-between items-end mb-2">
         <div>
           <h1 className="text-2xl font-black">Home</h1>
           <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
@@ -97,13 +76,30 @@ const Home: React.FC = () => {
         </div>
       </header>
 
-      {/* Combined Stats Widget */}
-      <section className="bg-white dark:bg-gray-800 rounded-[2.5rem] border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden flex flex-col">
-        <div className="flex flex-col md:flex-row border-b border-gray-50 dark:border-gray-700/50">
-          {/* Left: Chart */}
-          <div className="flex-1 p-6 border-b md:border-b-0 md:border-r border-gray-50 dark:border-gray-700/50">
-            <h3 className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-6">Activity</h3>
-            <div className="flex items-end justify-between h-24 gap-1.5 px-2">
+      {/* 1. Pyramid Top: Safe to Spend */}
+      <section className={`p-8 rounded-[2.5rem] text-center border shadow-xl relative overflow-hidden transition-all ${
+        safeToSpend >= 0
+          ? 'bg-blue-600 border-blue-500 shadow-blue-500/20 text-white'
+          : 'bg-red-500 border-red-400 shadow-red-500/20 text-white'
+      }`}>
+         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl" />
+         <div className="relative z-10 flex flex-col items-center gap-2">
+            <div className="p-2 bg-white/20 rounded-xl backdrop-blur-md mb-2">
+               <ShieldCheck size={20} strokeWidth={3} />
+            </div>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] opacity-80">Safe to Spend</p>
+            <p className="text-5xl font-black tabular-nums tracking-tighter">
+               ₱ {safeToSpend.toLocaleString()}
+            </p>
+         </div>
+      </section>
+
+      {/* 2. Middle: Symmetry (50/50 Split) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+         {/* Left: Activity Chart */}
+         <section className="bg-white dark:bg-gray-800 p-6 rounded-[2rem] border border-gray-50 dark:border-gray-700 shadow-sm flex flex-col justify-between h-48">
+            <h3 className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-4">Activity (7D)</h3>
+            <div className="flex items-end justify-between flex-1 gap-1.5 px-1">
               {chartData.map((day, i) => (
                 <div key={i} className="flex flex-col items-center flex-1 gap-2 h-full">
                   <div className="flex-1 w-full flex items-end justify-center gap-0.5">
@@ -122,66 +118,35 @@ const Home: React.FC = () => {
                 </div>
               ))}
             </div>
-          </div>
+         </section>
 
-          {/* Right: Spent Toggles */}
-          <div className="w-full md:w-48 p-6 flex flex-col justify-between gap-4">
-             <div>
-                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Spent</p>
-                <p className="text-2xl font-black text-gray-900 dark:text-white transition-all">
-                  ₱ {stats[spentTimeframe].toLocaleString()}
-                </p>
-             </div>
-             <div className="flex md:flex-col gap-1.5">
-                {(['today', 'week', 'month'] as const).map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setSpentTimeframe(t)}
-                    className={`flex-1 py-2 px-3 rounded-xl text-[9px] font-black uppercase tracking-tighter transition-all ${
-                      spentTimeframe === t
-                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                        : 'bg-gray-50 dark:bg-gray-900 text-gray-400'
-                    }`}
-                  >
-                    {t}
-                  </button>
-                ))}
-             </div>
-          </div>
-        </div>
-
-        {/* Bottom: Safe to Spend */}
-        <div className={`p-6 text-center transition-colors ${safeToSpend >= 0 ? 'bg-green-50/30 dark:bg-green-500/5' : 'bg-red-50/30 dark:bg-red-500/5'}`}>
-           <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] mb-1">Safe to Spend</p>
-           <p className={`text-3xl font-black ${safeToSpend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              ₱ {safeToSpend.toLocaleString()}
-           </p>
-        </div>
-      </section>
-
-      {/* Upcoming Commitments */}
-      <section className="space-y-4">
-        <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Upcoming Commitments</h3>
-        <div className="space-y-2">
-          {upcomingCommitments.length === 0 ? (
-            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-3xl p-10 text-center text-gray-400 text-[10px] font-black uppercase tracking-widest border border-dashed border-gray-100 dark:border-gray-800">
-              No upcoming goals
+         {/* Right: Spending Card */}
+         <section className="bg-white dark:bg-gray-800 p-6 rounded-[2rem] border border-gray-50 dark:border-gray-700 shadow-sm flex flex-col justify-between h-48">
+            <div>
+               <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Spent</p>
+               <p className="text-3xl font-black text-gray-900 dark:text-white tabular-nums">
+                 ₱ {stats[spentTimeframe].toLocaleString()}
+               </p>
             </div>
-          ) : (
-            upcomingCommitments.map((due) => (
-              <div key={due.id} className="bg-white dark:bg-gray-800 px-6 py-5 rounded-[1.5rem] border border-gray-50 dark:border-gray-700/50 shadow-sm flex items-center justify-between">
-                <div>
-                  <p className="font-black text-sm text-gray-900 dark:text-white uppercase tracking-tight">{due.label}</p>
-                  <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Day {due.dayOfMonth}</p>
-                </div>
-                <p className="font-black text-sm">₱ {due.amount.toLocaleString()}</p>
-              </div>
-            ))
-          )}
-        </div>
-      </section>
+            <div className="flex gap-1">
+               {(['today', 'week', 'month'] as const).map((t) => (
+                 <button
+                   key={t}
+                   onClick={() => setSpentTimeframe(t)}
+                   className={`flex-1 py-2 px-1 rounded-xl text-[8px] font-black uppercase tracking-tighter transition-all ${
+                     spentTimeframe === t
+                       ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                       : 'bg-gray-50 dark:bg-gray-900 text-gray-400'
+                   }`}
+                 >
+                   {t}
+                 </button>
+               ))}
+            </div>
+         </section>
+      </div>
 
-      {/* Recent Activity */}
+      {/* 3. Bottom: Recent Activity */}
       <section className="space-y-4">
         <div className="flex justify-between items-center px-1">
           <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Recent Activity</h3>
@@ -192,19 +157,19 @@ const Home: React.FC = () => {
             History <ChevronRight size={10} strokeWidth={3} />
           </button>
         </div>
-        <div className="rounded-[2rem] overflow-hidden border border-gray-50 dark:border-gray-700/50">
+        <div className="rounded-[2.5rem] overflow-hidden border border-gray-50 dark:border-gray-700/50 shadow-sm">
           {externalTransactions.length === 0 ? (
-            <p className="text-center text-gray-400 py-6 text-[10px] font-black uppercase tracking-widest italic bg-white dark:bg-gray-800">No activity yet</p>
+            <p className="text-center text-gray-400 py-10 text-[10px] font-black uppercase tracking-widest italic bg-white dark:bg-gray-800">No activity yet</p>
           ) : (
-            externalTransactions.slice(0, 5).map((t, i) => (
+            externalTransactions.slice(0, 6).map((t, i) => (
               <div
                 key={t.id}
-                className={`flex items-center justify-between px-6 py-4 ${
+                className={`flex items-center justify-between px-6 py-4 transition-colors ${
                   i % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/50 dark:bg-white/5'
                 }`}
               >
                 <div className="flex items-center gap-4">
-                  <div className={`w-1.5 h-1.5 rounded-full ${t.type === 'income' ? 'bg-green-500' : 'bg-red-400'}`} />
+                  <div className={`w-1.5 h-1.5 rounded-full ${t.type === 'income' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.5)]'}`} />
                   <div>
                     <p className="text-xs font-bold text-gray-800 dark:text-gray-200">{t.label}</p>
                     <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mt-0.5">
@@ -212,7 +177,7 @@ const Home: React.FC = () => {
                     </p>
                   </div>
                 </div>
-                <p className={`text-xs font-black ${t.type === 'income' ? 'text-green-600' : 'text-gray-900 dark:text-white'}`}>
+                <p className={`text-xs font-black tabular-nums ${t.type === 'income' ? 'text-green-600' : 'text-gray-900 dark:text-white'}`}>
                   {t.type === 'income' ? '+' : '-'} ₱ {t.amount.toLocaleString()}
                 </p>
               </div>
@@ -225,7 +190,7 @@ const Home: React.FC = () => {
       <Modal isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} title="Transaction History">
         <div className="space-y-3 max-h-[60vh] overflow-y-auto no-scrollbar">
           {externalTransactions.length === 0 ? (
-            <p className="text-center text-gray-400 py-8">No transactions found.</p>
+            <p className="text-center text-gray-400 py-8 font-black uppercase text-[10px] tracking-widest">No transactions found.</p>
           ) : (
             externalTransactions.map((t) => (
               <div key={t.id} className="bg-gray-50 dark:bg-gray-800 p-5 rounded-3xl flex items-center justify-between border border-transparent shadow-sm active:scale-95 transition-transform">
@@ -242,7 +207,7 @@ const Home: React.FC = () => {
                     </p>
                   </div>
                 </div>
-                <p className={`font-black ${t.type === 'income' ? 'text-green-600' : 'text-red-500'}`}>
+                <p className={`font-black tabular-nums ${t.type === 'income' ? 'text-green-600' : 'text-red-500'}`}>
                   {t.type === 'income' ? '+' : '-'} ₱ {t.amount.toLocaleString()}
                 </p>
               </div>
@@ -282,7 +247,7 @@ const Modal: React.FC<{ isOpen: boolean, onClose: () => void, title: string, chi
             {children}
             <button
               onClick={onClose}
-              className="w-full mt-8 py-4 bg-gray-950 dark:bg-white text-white dark:text-gray-950 font-black rounded-2xl shadow-xl"
+              className="w-full mt-8 py-4 bg-gray-950 dark:bg-white text-white dark:text-gray-950 font-black rounded-2xl shadow-xl uppercase text-[10px] tracking-widest"
             >
               Close
             </button>

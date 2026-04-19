@@ -270,7 +270,7 @@ const Settings: React.FC = () => {
               </p>
               <div className="bg-white/10 rounded-2xl p-4">
                  <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-1 opacity-60">Version</p>
-                 <p className="text-sm font-black">0.2.0-beta</p>
+                 <p className="text-sm font-black">2.0.1</p>
               </div>
            </div>
         </section>

@@ -133,9 +133,13 @@ export const useBudgetStore = create<BudgetState>()(
           transactions: newTransactions,
           dues: state.dues.map(d => {
             if (d.id === id) {
+              const updatedTerm = (isMarkingPaid && d.currentTerm !== undefined)
+                ? d.currentTerm + 1
+                : d.currentTerm
               return {
                 ...d,
                 isPaid: isMarkingPaid,
+                currentTerm: updatedTerm
               }
             }
             return d

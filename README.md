@@ -1,73 +1,40 @@
-# React + TypeScript + Vite
+# Personal Budget App v2.0.1
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A minimalist, high-contrast personal finance tracker built with React, Vite, Tailwind CSS, and Framer Motion.
 
-Currently, two official plugins are available:
+## Core Design Philosophy: 'Pyramid & Symmetry'
+- **The Peak:** A full-width 'Safe to Spend' card dominates the Home view, providing instant clarity on your daily allowance after all monthly dues are accounted for.
+- **Symmetry:** Statistics and Activity are balanced in a responsive 50/50 layout, ensuring critical data is always visible at a glance.
+- **Zebra Striping:** Muted date labels and alternating background colors in lists for superior readability on mobile.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Key Features
 
-## React Compiler
+### 1. Waterfall Funding System
+- Automatically 'pours' your current balance into monthly commitments based on a 5-level priority system (Critical to Wishlist).
+- Derived state funding ensures progress bars are always accurate and reactive.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 2. Trend & Distribution Dashboard
+- **Cumulative Trend:** Visualize your monthly cash flow with a dual AreaChart showing Income vs. Expenses. The shaded area represents your real-time Net Flow.
+- **Expense Distribution:** A dynamic Pie Chart that maps transactions to your custom categories and colors defined in Settings.
 
-## Expanding the ESLint configuration
+### 3. Automated Monthly Roadmaps
+- Track long-term commitments (loans, subscriptions) with term tracking (e.g., Month 12 of 36).
+- **'Paid' Automation:** Mark goals as paid to instantly increment terms and reset contributions for the next cycle.
+- Automatic list re-sorting moves paid items to the bottom to focus on pending goals.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 4. Hybrid Transaction Logging
+- **Quick Log:** Tap custom presets in the FAB modal for 1-second logging.
+- **Manual Entry:** Full control over notes, amounts, categories, and past dates.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### 5. Mobile-First & Privacy-Focused
+- Centered 'max-w-md' container for a native app feel on desktop.
+- 100% local storage. Your financial data never leaves your device.
+- Dark/Light mode support with Tailwind CSS v4.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Technical Stack
+- **Framework:** React 19 + Vite
+- **Styling:** Tailwind CSS v4
+- **State Management:** Zustand (with Persist middleware)
+- **Animations:** Framer Motion
+- **Charts:** Recharts
+- **Icons:** Lucide React
