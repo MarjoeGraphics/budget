@@ -19,7 +19,7 @@ const BottomNavbar: React.FC = () => {
   ] as const
 
   return (
-    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-t border-gray-200 dark:border-gray-800 px-6 py-3 flex justify-between items-center z-40">
+    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-[#0A0A0B]/80 backdrop-blur-xl border-t border-white/10 px-8 py-5 flex justify-between items-center z-40 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
       {tabs.map((tab) => {
         const Icon = tab.icon
         const isActive = activeTab === tab.id
@@ -29,14 +29,22 @@ const BottomNavbar: React.FC = () => {
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              "flex flex-col items-center gap-1 transition-colors duration-200",
+              "flex flex-col items-center gap-1.5 transition-all duration-300 active:scale-90",
               isActive
-                ? "text-blue-600 dark:text-blue-400"
-                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                ? "text-blue-400"
+                : "text-gray-600 hover:text-gray-400"
             )}
           >
-            <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
-            <span className="text-xs font-medium">{tab.label}</span>
+            <div className={cn(
+                "p-2.5 rounded-sm transition-all duration-300",
+                isActive ? "bg-blue-500/10 shadow-[0_0_20px_rgba(59,130,246,0.1)] border border-blue-500/20" : "border border-transparent"
+            )}>
+                <Icon size={20} strokeWidth={isActive ? 3 : 2} />
+            </div>
+            <span className={cn(
+                "text-[8px] font-black uppercase tracking-[0.2em] transition-all duration-300",
+                isActive ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-1"
+            )}>{tab.label}</span>
           </button>
         )
       })}

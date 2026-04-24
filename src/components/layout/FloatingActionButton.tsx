@@ -8,13 +8,13 @@ const FloatingActionButton: React.FC = () => {
 
   return (
     <motion.button
-      whileHover={{ scale: 1.1 }}
-      whileTap={{ scale: 0.9 }}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
       onClick={() => setIsModalOpen(true)}
-      className="fixed bottom-24 right-1/2 translate-x-[160px] md:translate-x-[160px] bg-blue-600 text-white p-4 rounded-full shadow-lg z-50 flex items-center justify-center"
+      className="fixed bottom-28 right-1/2 translate-x-[150px] bg-white text-black p-4 rounded-sm shadow-2xl z-50 flex items-center justify-center border border-white/20"
       aria-label="Add new"
     >
-      <Plus size={28} />
+      <Plus size={24} strokeWidth={4} />
     </motion.button>
   )
 }

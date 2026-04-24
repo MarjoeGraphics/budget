@@ -12,17 +12,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { theme } = useAppStore()
 
   useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-    }
+    // Force dark mode for v2.0.0 Bespoke Design if requested,
+    // but the user's requirement says "Minimalist Dark Glassmorphism. Base: #0A0A0B."
+    // and usually these bespoke designs are dark-first.
+    document.documentElement.classList.add('dark')
   }, [theme])
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex justify-center">
-      <div className="w-full max-w-md bg-white dark:bg-gray-900 min-h-screen shadow-xl relative flex flex-col">
-        <main className="flex-1 pb-32">
+    <div className="min-h-screen bg-[#050505] flex justify-center selection:bg-blue-500/30">
+      <div className="w-full max-w-md bg-[#0A0A0B] min-h-screen shadow-2xl relative flex flex-col border-x border-white/5">
+        <main className="flex-1 pb-40">
           {children}
         </main>
 

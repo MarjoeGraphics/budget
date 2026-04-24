@@ -14,18 +14,28 @@ const Home: React.FC = () => {
   }, [checkAndResetMonthlyDues])
 
   // Logic & Math
-  const dueLeft = useMemo(() => dues
-    .filter(d => !d.isPaid)
-    .reduce((acc, d) => acc + d.amount, 0), [dues])
+  // STS Philosophy: Only subtract UNPAID dues for the CURRENT month.
+  const dueLeft = useMemo(() => {
+    const now = new Date()
+    const currentMonth = now.getMonth()
+    const currentYear = now.getFullYear()
+
+    return dues
+      .filter(d => {
+        const dueDate = new Date(d.dueDate)
+        const isCurrentMonth = dueDate.getMonth() === currentMonth && dueDate.getFullYear() === currentYear
+        return !d.isPaid && isCurrentMonth
+      })
+      .reduce((acc, d) => acc + d.amount, 0)
+  }, [dues])
 
   const safeToSpend = balance - dueLeft
   const externalTransactions = useMemo(() => transactions.filter(t => !t.isInternal), [transactions])
 
-  // Stats Calculations (using local date strings for PST/Philippines consistency)
+  // Stats Calculations
   const stats = useMemo(() => {
     const now = new Date()
     const todayStr = now.toLocaleDateString('en-PH')
-
     const last7Days = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
 
@@ -40,7 +50,7 @@ const Home: React.FC = () => {
     }
   }, [externalTransactions])
 
-  // Chart Logic
+  // Chart Logic (Refined for Bespoke Design)
   const chartData = useMemo(() => {
     const days = []
     for (let i = 6; i >= 0; i--) {
@@ -63,82 +73,98 @@ const Home: React.FC = () => {
 
   const maxChartVal = Math.max(...chartData.flatMap(d => [d.income, d.expense]), 1)
 
+  // Grouped Activity Logic (Capitalized Sticky Headers)
+  const groupedTransactions = useMemo(() => {
+    const groups: { [date: string]: Transaction[] } = {}
+    externalTransactions.forEach(t => {
+      const date = new Date(t.date)
+      const today = new Date()
+      const yesterday = new Date()
+      yesterday.setDate(today.getDate() - 1)
+
+      let dateKey = date.toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric' }).toUpperCase()
+      if (date.toLocaleDateString('en-PH') === today.toLocaleDateString('en-PH')) dateKey = 'TODAY'
+      else if (date.toLocaleDateString('en-PH') === yesterday.toLocaleDateString('en-PH')) dateKey = 'YESTERDAY'
+
+      if (!groups[dateKey]) groups[dateKey] = []
+      groups[dateKey].push(t)
+    })
+    return groups
+  }, [externalTransactions])
+
   return (
-    <div className="p-6 space-y-6">
-      <header className="flex justify-between items-end mb-2">
+    <div className="p-6 space-y-6 max-w-md mx-auto">
+      <header className="flex justify-between items-end mb-8">
         <div>
-          <h1 className="text-2xl font-black">Home</h1>
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
-            {new Date().toLocaleDateString('en-PH', { month: 'long', day: 'numeric' })}
+          <h1 className="text-sm font-black uppercase tracking-[0.3em] text-gray-500">Dashboard</h1>
+          <p className="text-[10px] font-medium text-gray-600 uppercase tracking-widest mt-1">
+            {new Date().toLocaleDateString('en-PH', { month: 'long', day: 'numeric', year: 'numeric' })}
           </p>
         </div>
         <div className="text-right">
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Balance</p>
-          <p className="text-2xl font-black">₱ {balance.toLocaleString()}</p>
+          <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">Balance</p>
+          <p className="text-lg font-mono-currency font-bold tracking-tighter">₱ {balance.toLocaleString()}</p>
         </div>
       </header>
 
-      {/* 1. Pyramid Top: Safe to Spend */}
-      <section className={`p-8 rounded-[2.5rem] text-center border shadow-xl relative overflow-hidden transition-all ${
-        safeToSpend >= 0
-          ? 'bg-blue-600 border-blue-500 shadow-blue-500/20 text-white'
-          : 'bg-red-500 border-red-400 shadow-red-500/20 text-white'
-      }`}>
-         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl" />
-         <div className="relative z-10 flex flex-col items-center gap-2">
-            <div className="p-2 bg-white/20 rounded-xl backdrop-blur-md mb-2">
-               <ShieldCheck size={20} strokeWidth={3} />
-            </div>
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] opacity-80">Safe to Spend</p>
-            <p className="text-5xl font-black tabular-nums tracking-tighter">
+      {/* 1. Pyramid Top: Hero Section (Safe to Spend) */}
+      <section className="glass p-10 card-radius text-center relative overflow-hidden shadow-2xl">
+         <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -mr-24 -mt-24 blur-3xl" />
+         <div className="relative z-10 flex flex-col items-center gap-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.5em] text-gray-400">Safe to Spend</p>
+            <p className={`text-6xl font-mono-currency font-bold tracking-tighter ${safeToSpend >= 0 ? 'text-white' : 'text-red-500'}`}>
                ₱ {safeToSpend.toLocaleString()}
             </p>
+            <div className="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/10">
+               <ShieldCheck size={12} className={safeToSpend >= 0 ? 'text-blue-400' : 'text-red-400'} />
+               <span className="text-[8px] font-black uppercase tracking-widest text-gray-500">Verified Budget</span>
+            </div>
          </div>
       </section>
 
-      {/* 2. Middle: Symmetry (50/50 Split) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* 2. Middle: Symmetry (50/50 Grid) */}
+      <div className="grid grid-cols-2 gap-4">
          {/* Left: Activity Chart */}
-         <section className="bg-white dark:bg-gray-800 p-6 rounded-[2rem] border border-gray-50 dark:border-gray-700 shadow-sm flex flex-col justify-between h-48">
-            <h3 className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-4">Activity (7D)</h3>
-            <div className="flex items-end justify-between flex-1 gap-1.5 px-1">
+         <section className="glass p-5 card-radius flex flex-col justify-between h-44">
+            <h3 className="text-[9px] font-black text-gray-500 uppercase tracking-widest">7D Activity</h3>
+            <div className="flex items-end justify-between flex-1 gap-2 px-1 mt-4">
               {chartData.map((day, i) => (
                 <div key={i} className="flex flex-col items-center flex-1 gap-2 h-full">
                   <div className="flex-1 w-full flex items-end justify-center gap-0.5">
                     <motion.div
                       initial={{ height: 0 }}
                       animate={{ height: `${(day.income / maxChartVal) * 100}%` }}
-                      className="w-1 bg-green-500 rounded-full min-h-[1px]"
+                      className="w-1 bg-blue-500 rounded-t-sm min-h-[1px]"
                     />
                     <motion.div
                       initial={{ height: 0 }}
                       animate={{ height: `${(day.expense / maxChartVal) * 100}%` }}
-                      className="w-1 bg-red-400 rounded-full min-h-[1px]"
+                      className="w-1 bg-white/20 rounded-t-sm min-h-[1px]"
                     />
                   </div>
-                  <span className="text-[8px] font-black text-gray-400">{day.label}</span>
+                  <span className="text-[8px] font-bold text-gray-600">{day.label}</span>
                 </div>
               ))}
             </div>
          </section>
 
          {/* Right: Spending Card */}
-         <section className="bg-white dark:bg-gray-800 p-6 rounded-[2rem] border border-gray-50 dark:border-gray-700 shadow-sm flex flex-col justify-between h-48">
+         <section className="glass p-5 card-radius flex flex-col justify-between h-44">
             <div>
-               <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Spent</p>
-               <p className="text-3xl font-black text-gray-900 dark:text-white tabular-nums">
+               <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Total Spent</p>
+               <p className="text-2xl font-mono-currency font-bold mt-1">
                  ₱ {stats[spentTimeframe].toLocaleString()}
                </p>
             </div>
-            <div className="flex gap-1">
+            <div className="flex p-0.5 glass-recessed btn-radius">
                {(['today', 'week', 'month'] as const).map((t) => (
                  <button
                    key={t}
                    onClick={() => setSpentTimeframe(t)}
-                   className={`flex-1 py-2 px-1 rounded-xl text-[8px] font-black uppercase tracking-tighter transition-all ${
+                   className={`flex-1 py-1.5 rounded-sm text-[8px] font-black uppercase tracking-tighter transition-all ${
                      spentTimeframe === t
-                       ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                       : 'bg-gray-50 dark:bg-gray-900 text-gray-400'
+                       ? 'bg-white text-black shadow-lg'
+                       : 'text-gray-500 hover:text-gray-300'
                    }`}
                  >
                    {t}
@@ -148,70 +174,83 @@ const Home: React.FC = () => {
          </section>
       </div>
 
-      {/* 3. Bottom: Recent Activity */}
-      <section className="space-y-4">
+      {/* 3. Bottom: Recent Activity (The Ledger) */}
+      <section className="space-y-4 pt-4">
         <div className="flex justify-between items-center px-1">
-          <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Recent Activity</h3>
+          <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">The Ledger</h3>
           <button
             onClick={() => setIsHistoryOpen(true)}
-            className="flex items-center gap-1 text-[9px] font-black text-blue-600 uppercase tracking-tighter"
+            className="flex items-center gap-1 text-[9px] font-black text-blue-400 uppercase tracking-widest"
           >
-            History <ChevronRight size={10} strokeWidth={3} />
+            Full History <ChevronRight size={10} strokeWidth={3} />
           </button>
         </div>
-        <div className="rounded-[2.5rem] overflow-hidden border border-gray-50 dark:border-gray-700/50 shadow-sm">
-          {externalTransactions.length === 0 ? (
-            <p className="text-center text-gray-400 py-10 text-[10px] font-black uppercase tracking-widest italic bg-white dark:bg-gray-800">No activity yet</p>
+
+        <div className="space-y-8">
+          {Object.keys(groupedTransactions).length === 0 ? (
+            <div className="glass p-12 card-radius border-dashed">
+              <p className="text-center text-gray-600 text-[10px] font-black uppercase tracking-[0.3em] italic">No activity logs found</p>
+            </div>
           ) : (
-            externalTransactions.slice(0, 6).map((t, i) => (
-              <div
-                key={t.id}
-                className={`flex items-center justify-between px-6 py-4 transition-colors ${
-                  i % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/50 dark:bg-white/5'
-                }`}
-              >
-                <div className="flex items-center gap-4">
-                  <div className={`w-1.5 h-1.5 rounded-full ${t.type === 'income' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.5)]'}`} />
-                  <div>
-                    <p className="text-xs font-bold text-gray-800 dark:text-gray-200">{t.label}</p>
-                    <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mt-0.5">
-                      {new Date(t.date).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })}
-                    </p>
-                  </div>
+            Object.entries(groupedTransactions).slice(0, 3).map(([date, txs]) => (
+              <div key={date} className="space-y-3">
+                <div className="sticky top-0 z-20 backdrop-blur-md bg-[#0A0A0B]/80 py-2 border-b border-white/5">
+                  <p className="text-[9px] font-black text-gray-500 uppercase tracking-[0.4em] ml-1">{date}</p>
                 </div>
-                <p className={`text-xs font-black tabular-nums ${t.type === 'income' ? 'text-green-600' : 'text-gray-900 dark:text-white'}`}>
-                  {t.type === 'income' ? '+' : '-'} ₱ {t.amount.toLocaleString()}
-                </p>
+                <div className="glass card-radius overflow-hidden shadow-sm">
+                  {txs.map((t, i) => (
+                    <div
+                      key={t.id}
+                      className={`flex items-center justify-between px-5 py-4 transition-colors ${
+                        i % 2 !== 0 ? 'bg-white/[0.02]' : ''
+                      } border-b border-white/5 last:border-0`}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className={`w-1 h-1 rounded-full ${t.type === 'income' ? 'bg-blue-400' : 'bg-white/40'}`} />
+                        <div>
+                          <p className="text-xs font-semibold text-gray-200 tracking-tight">{t.label}</p>
+                        </div>
+                      </div>
+                      <p className={`text-xs font-mono-currency font-bold ${t.type === 'income' ? 'text-blue-400' : 'text-white'}`}>
+                        {t.type === 'income' ? '+' : '-'} ₱ {t.amount.toLocaleString()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
               </div>
             ))
           )}
         </div>
       </section>
 
-      {/* History Modal */}
-      <Modal isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} title="Transaction History">
-        <div className="space-y-3 max-h-[60vh] overflow-y-auto no-scrollbar">
-          {externalTransactions.length === 0 ? (
-            <p className="text-center text-gray-400 py-8 font-black uppercase text-[10px] tracking-widest">No transactions found.</p>
+      {/* History Modal (Refined) */}
+      <Modal isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} title="Full Ledger">
+        <div className="space-y-8 max-h-[60vh] overflow-y-auto no-scrollbar pb-10">
+          {Object.keys(groupedTransactions).length === 0 ? (
+            <p className="text-center text-gray-600 py-8 font-black uppercase text-[10px] tracking-widest">No activity found.</p>
           ) : (
-            externalTransactions.map((t) => (
-              <div key={t.id} className="bg-gray-50 dark:bg-gray-800 p-5 rounded-3xl flex items-center justify-between border border-transparent shadow-sm active:scale-95 transition-transform">
-                <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
-                    t.type === 'income' ? 'bg-green-100 text-green-600 dark:bg-green-900/30' : 'bg-red-50 text-red-500 dark:bg-red-900/20'
-                  }`}>
-                    {t.type === 'income' ? <TrendingUp size={20} strokeWidth={2.5} /> : <TrendingDown size={20} strokeWidth={2.5} />}
-                  </div>
-                  <div>
-                    <p className="font-black text-sm">{t.label}</p>
-                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-tighter">
-                      {new Date(t.date).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })}
+            Object.entries(groupedTransactions).map(([date, txs]) => (
+              <div key={date} className="space-y-3">
+                <div className="sticky top-0 z-30 backdrop-blur-md bg-gray-900/80 py-2 border-b border-white/5">
+                  <p className="text-[9px] font-black text-gray-500 uppercase tracking-[0.4em]">{date}</p>
+                </div>
+                {txs.map((t) => (
+                  <div key={t.id} className="glass p-5 card-radius flex items-center justify-between shadow-sm active:scale-[0.98] transition-all">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-10 h-10 card-radius flex items-center justify-center ${
+                        t.type === 'income' ? 'bg-blue-500/10 text-blue-400' : 'bg-white/5 text-gray-400'
+                      }`}>
+                        {t.type === 'income' ? <TrendingUp size={18} strokeWidth={2.5} /> : <TrendingDown size={18} strokeWidth={2.5} />}
+                      </div>
+                      <div>
+                        <p className="font-bold text-sm text-gray-200">{t.label}</p>
+                      </div>
+                    </div>
+                    <p className={`font-mono-currency font-bold ${t.type === 'income' ? 'text-blue-400' : 'text-white'}`}>
+                      {t.type === 'income' ? '+' : '-'} ₱ {t.amount.toLocaleString()}
                     </p>
                   </div>
-                </div>
-                <p className={`font-black tabular-nums ${t.type === 'income' ? 'text-green-600' : 'text-red-500'}`}>
-                  {t.type === 'income' ? '+' : '-'} ₱ {t.amount.toLocaleString()}
-                </p>
+                ))}
               </div>
             ))
           )}
@@ -231,27 +270,27 @@ const Modal: React.FC<{ isOpen: boolean, onClose: () => void, title: string, chi
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100]"
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100]"
           />
           <motion.div
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white dark:bg-gray-900 rounded-t-[2.5rem] p-8 z-[110] shadow-2xl"
+            className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-[#0A0A0B] border-t border-white/10 p-8 z-[110] shadow-2xl card-radius rounded-b-none"
           >
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-black">{title}</h2>
-              <button onClick={onClose} className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500">
-                <XIcon size={20} strokeWidth={3} />
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-lg font-black uppercase tracking-[0.2em]">{title}</h2>
+              <button onClick={onClose} className="p-2 glass-recessed btn-radius text-gray-500">
+                <XIcon size={18} strokeWidth={3} />
               </button>
             </div>
             {children}
             <button
               onClick={onClose}
-              className="w-full mt-8 py-4 bg-gray-950 dark:bg-white text-white dark:text-gray-950 font-black rounded-2xl shadow-xl uppercase text-[10px] tracking-widest"
+              className="w-full mt-8 py-4 bg-white text-black font-black btn-radius uppercase text-[10px] tracking-[0.3em] shadow-xl"
             >
-              Close
+              Back to Dashboard
             </button>
           </motion.div>
         </>
