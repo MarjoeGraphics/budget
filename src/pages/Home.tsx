@@ -14,9 +14,20 @@ const Home: React.FC = () => {
   }, [checkAndResetMonthlyDues])
 
   // Logic & Math
-  const dueLeft = useMemo(() => dues
-    .filter(d => !d.isPaid)
-    .reduce((acc, d) => acc + d.amount, 0), [dues])
+  // STS Philosophy: Only subtract UNPAID dues for the CURRENT month.
+  const dueLeft = useMemo(() => {
+    const now = new Date()
+    const currentMonth = now.getMonth()
+    const currentYear = now.getFullYear()
+
+    return dues
+      .filter(d => {
+        const dueDate = new Date(d.dueDate)
+        const isCurrentMonth = dueDate.getMonth() === currentMonth && dueDate.getFullYear() === currentYear
+        return !d.isPaid && isCurrentMonth
+      })
+      .reduce((acc, d) => acc + d.amount, 0)
+  }, [dues])
 
   const safeToSpend = balance - dueLeft
   const externalTransactions = useMemo(() => transactions.filter(t => !t.isInternal), [transactions])
@@ -63,6 +74,25 @@ const Home: React.FC = () => {
 
   const maxChartVal = Math.max(...chartData.flatMap(d => [d.income, d.expense]), 1)
 
+  // Grouped Activity Logic
+  const groupedTransactions = useMemo(() => {
+    const groups: { [date: string]: Transaction[] } = {}
+    externalTransactions.forEach(t => {
+      const date = new Date(t.date)
+      const today = new Date()
+      const yesterday = new Date()
+      yesterday.setDate(today.getDate() - 1)
+
+      let dateKey = date.toLocaleDateString('en-PH', { month: 'long', day: 'numeric', year: 'numeric' })
+      if (date.toLocaleDateString('en-PH') === today.toLocaleDateString('en-PH')) dateKey = 'Today'
+      else if (date.toLocaleDateString('en-PH') === yesterday.toLocaleDateString('en-PH')) dateKey = 'Yesterday'
+
+      if (!groups[dateKey]) groups[dateKey] = []
+      groups[dateKey].push(t)
+    })
+    return groups
+  }, [externalTransactions])
+
   return (
     <div className="p-6 space-y-6">
       <header className="flex justify-between items-end mb-2">
@@ -78,15 +108,15 @@ const Home: React.FC = () => {
         </div>
       </header>
 
-      {/* 1. Pyramid Top: Safe to Spend */}
-      <section className={`p-8 rounded-[2.5rem] text-center border shadow-xl relative overflow-hidden transition-all ${
+      {/* 1. Pyramid Top: Safe to Spend (Strong Glassmorphism) */}
+      <section className={`p-8 rounded-[2.5rem] text-center border shadow-2xl relative overflow-hidden transition-all backdrop-blur-xl ${
         safeToSpend >= 0
-          ? 'bg-blue-600 border-blue-500 shadow-blue-500/20 text-white'
-          : 'bg-red-500 border-red-400 shadow-red-500/20 text-white'
+          ? 'bg-blue-600/80 border-blue-400/50 shadow-blue-500/20 text-white'
+          : 'bg-red-500/80 border-red-400/50 shadow-red-500/20 text-white'
       }`}>
-         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl" />
+         <div className="absolute top-0 right-0 w-32 h-32 bg-white/20 rounded-full -mr-16 -mt-16 blur-3xl" />
          <div className="relative z-10 flex flex-col items-center gap-2">
-            <div className="p-2 bg-white/20 rounded-xl backdrop-blur-md mb-2">
+            <div className="p-2 bg-white/20 rounded-xl backdrop-blur-md mb-2 border border-white/30">
                <ShieldCheck size={20} strokeWidth={3} />
             </div>
             <p className="text-[10px] font-black uppercase tracking-[0.4em] opacity-80">Safe to Spend</p>
@@ -148,7 +178,7 @@ const Home: React.FC = () => {
          </section>
       </div>
 
-      {/* 3. Bottom: Recent Activity */}
+      {/* 3. Bottom: Recent Activity (Grouped) */}
       <section className="space-y-4">
         <div className="flex justify-between items-center px-1">
           <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Recent Activity</h3>
@@ -159,29 +189,38 @@ const Home: React.FC = () => {
             History <ChevronRight size={10} strokeWidth={3} />
           </button>
         </div>
-        <div className="rounded-[2.5rem] overflow-hidden border border-gray-50 dark:border-gray-700/50 shadow-sm">
-          {externalTransactions.length === 0 ? (
-            <p className="text-center text-gray-400 py-10 text-[10px] font-black uppercase tracking-widest italic bg-white dark:bg-gray-800">No activity yet</p>
+
+        <div className="space-y-6">
+          {Object.keys(groupedTransactions).length === 0 ? (
+            <div className="rounded-[2.5rem] overflow-hidden border border-gray-50 dark:border-gray-700/50 shadow-sm">
+              <p className="text-center text-gray-400 py-10 text-[10px] font-black uppercase tracking-widest italic bg-white dark:bg-gray-800">No activity yet</p>
+            </div>
           ) : (
-            externalTransactions.slice(0, 6).map((t, i) => (
-              <div
-                key={t.id}
-                className={`flex items-center justify-between px-6 py-4 transition-colors ${
-                  i % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/50 dark:bg-white/5'
-                }`}
-              >
-                <div className="flex items-center gap-4">
-                  <div className={`w-1.5 h-1.5 rounded-full ${t.type === 'income' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.5)]'}`} />
-                  <div>
-                    <p className="text-xs font-bold text-gray-800 dark:text-gray-200">{t.label}</p>
-                    <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mt-0.5">
-                      {new Date(t.date).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })}
-                    </p>
-                  </div>
+            Object.entries(groupedTransactions).slice(0, 3).map(([date, txs]) => (
+              <div key={date} className="space-y-2">
+                <div className="sticky top-0 z-20 bg-gray-50/80 dark:bg-gray-950/80 backdrop-blur-md px-4 py-1 rounded-full w-fit mx-auto border border-gray-200/50 dark:border-gray-800/50 shadow-sm">
+                  <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">{date}</p>
                 </div>
-                <p className={`text-xs font-black tabular-nums ${t.type === 'income' ? 'text-green-600' : 'text-gray-900 dark:text-white'}`}>
-                  {t.type === 'income' ? '+' : '-'} ₱ {t.amount.toLocaleString()}
-                </p>
+                <div className="rounded-[2.5rem] overflow-hidden border border-gray-50 dark:border-gray-700/50 shadow-sm">
+                  {txs.map((t, i) => (
+                    <div
+                      key={t.id}
+                      className={`flex items-center justify-between px-6 py-4 transition-colors ${
+                        i % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/50 dark:bg-white/5'
+                      }`}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className={`w-1.5 h-1.5 rounded-full ${t.type === 'income' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.5)]'}`} />
+                        <div>
+                          <p className="text-xs font-bold text-gray-800 dark:text-gray-200">{t.label}</p>
+                        </div>
+                      </div>
+                      <p className={`text-xs font-black tabular-nums ${t.type === 'income' ? 'text-green-600' : 'text-gray-900 dark:text-white'}`}>
+                        {t.type === 'income' ? '+' : '-'} ₱ {t.amount.toLocaleString()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
               </div>
             ))
           )}
@@ -190,28 +229,32 @@ const Home: React.FC = () => {
 
       {/* History Modal */}
       <Modal isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} title="Transaction History">
-        <div className="space-y-3 max-h-[60vh] overflow-y-auto no-scrollbar">
-          {externalTransactions.length === 0 ? (
+        <div className="space-y-6 max-h-[60vh] overflow-y-auto no-scrollbar pb-10">
+          {Object.keys(groupedTransactions).length === 0 ? (
             <p className="text-center text-gray-400 py-8 font-black uppercase text-[10px] tracking-widest">No transactions found.</p>
           ) : (
-            externalTransactions.map((t) => (
-              <div key={t.id} className="bg-gray-50 dark:bg-gray-800 p-5 rounded-3xl flex items-center justify-between border border-transparent shadow-sm active:scale-95 transition-transform">
-                <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
-                    t.type === 'income' ? 'bg-green-100 text-green-600 dark:bg-green-900/30' : 'bg-red-50 text-red-500 dark:bg-red-900/20'
-                  }`}>
-                    {t.type === 'income' ? <TrendingUp size={20} strokeWidth={2.5} /> : <TrendingDown size={20} strokeWidth={2.5} />}
-                  </div>
-                  <div>
-                    <p className="font-black text-sm">{t.label}</p>
-                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-tighter">
-                      {new Date(t.date).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })}
+            Object.entries(groupedTransactions).map(([date, txs]) => (
+              <div key={date} className="space-y-3">
+                <div className="sticky top-0 z-30 bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-md px-4 py-1 rounded-full w-fit mx-auto border border-gray-200/50 dark:border-gray-700/50 shadow-sm">
+                  <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">{date}</p>
+                </div>
+                {txs.map((t) => (
+                  <div key={t.id} className="bg-white dark:bg-gray-800 p-5 rounded-3xl flex items-center justify-between border border-gray-50 dark:border-gray-700 shadow-sm active:scale-95 transition-transform">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
+                        t.type === 'income' ? 'bg-green-100 text-green-600 dark:bg-green-900/30' : 'bg-red-50 text-red-500 dark:bg-red-900/20'
+                      }`}>
+                        {t.type === 'income' ? <TrendingUp size={20} strokeWidth={2.5} /> : <TrendingDown size={20} strokeWidth={2.5} />}
+                      </div>
+                      <div>
+                        <p className="font-black text-sm">{t.label}</p>
+                      </div>
+                    </div>
+                    <p className={`font-black tabular-nums ${t.type === 'income' ? 'text-green-600' : 'text-red-500'}`}>
+                      {t.type === 'income' ? '+' : '-'} ₱ {t.amount.toLocaleString()}
                     </p>
                   </div>
-                </div>
-                <p className={`font-black tabular-nums ${t.type === 'income' ? 'text-green-600' : 'text-red-500'}`}>
-                  {t.type === 'income' ? '+' : '-'} ₱ {t.amount.toLocaleString()}
-                </p>
+                ))}
               </div>
             ))
           )}

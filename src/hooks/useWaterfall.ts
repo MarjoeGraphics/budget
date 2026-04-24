@@ -11,16 +11,20 @@ export const useWaterfall = () => {
       if (!Array.isArray(dues)) return {};
       const safeBalance = typeof balance === 'number' ? round(balance) : 0;
 
-      // 1. Sort dues by Priority (primary), then by Day of Month (secondary), then by Amount (descending)
+      // 1. Sort dues by Priority (primary), then by Due Date (secondary), then by Amount (descending)
       const sortedDues = [...dues].sort((a, b) => {
         const pA = a?.priority ?? 3;
         const pB = b?.priority ?? 3;
         if (pA !== pB) {
           return pA - pB;
         }
-        if (a.dayOfMonth !== b.dayOfMonth) {
-          return a.dayOfMonth - b.dayOfMonth;
+
+        const dateA = a.dueDate ?? 0;
+        const dateB = b.dueDate ?? 0;
+        if (dateA !== dateB) {
+          return dateA - dateB;
         }
+
         return (b.amount ?? 0) - (a.amount ?? 0);
       });
 
@@ -33,13 +37,18 @@ export const useWaterfall = () => {
 
         if (due.isPaid) {
           // Skip already paid dues - they've already had their cost deducted from balance
+          // We show them as fully funded
           allocations[due.id] = round(due.amount ?? 0);
           return;
         }
 
-        const allocation = round(Math.min(remainingBalance, due.amount ?? 0));
-        allocations[due.id] = allocation;
-        remainingBalance = round(remainingBalance - allocation);
+        // Use currentAmount (manual contribution) as baseline
+        const manualContributed = typeof due.currentAmount === 'number' ? due.currentAmount : 0;
+        const needed = Math.max(0, (due.amount ?? 0) - manualContributed);
+
+        const autoAllocation = round(Math.min(remainingBalance, needed));
+        allocations[due.id] = round(manualContributed + autoAllocation);
+        remainingBalance = round(remainingBalance - autoAllocation);
       });
 
       return allocations;
