@@ -43,6 +43,8 @@ interface BudgetState {
   setBalance: (amount: number) => void
   setInitialBalance: (amount: number) => void
   addTransaction: (transaction: Omit<Transaction, 'id' | 'date'> & { date?: number }) => void
+  updateTransaction: (id: string, updates: Partial<Transaction>) => void
+  deleteTransaction: (id: string) => void
 
   addDue: (due: Omit<Due, 'id' | 'isPaid' | 'currentAmount' | 'dueDate'> & { dayOfMonth: number }) => void
   toggleDuePaid: (id: string) => void
@@ -73,6 +75,16 @@ const getNextMonthDate = (currentDate: Date): Date => {
   return nextMonth
 }
 
+const recalculateBalance = (initialBalance: number, transactions: Transaction[]): number => {
+    return transactions.reduce((acc, t) => {
+        if (t.type === 'income' || t.type === 'savings') {
+            return round(acc + t.amount)
+        } else {
+            return round(acc - t.amount)
+        }
+    }, round(initialBalance))
+}
+
 export const useBudgetStore = create<BudgetState>()(
   persist(
     (set, get) => ({
@@ -87,10 +99,11 @@ export const useBudgetStore = create<BudgetState>()(
 
       setInitialBalance: (amount) => set((state) => {
         const roundedAmount = round(amount)
-        const diff = roundedAmount - state.initialBalance
+        const newTransactions = state.transactions
+        const newBalance = recalculateBalance(roundedAmount, newTransactions)
         return {
           initialBalance: roundedAmount,
-          balance: round(state.balance + diff)
+          balance: newBalance
         }
       }),
 
@@ -104,25 +117,37 @@ export const useBudgetStore = create<BudgetState>()(
           date: date || Date.now()
         }
 
-        let newBalance = state.balance
-        if (t.type === 'income' || t.type === 'savings') {
-          newBalance += amount
-        } else {
-          newBalance -= amount
-        }
+        const newTransactions = [newTransaction, ...state.transactions]
+        const newBalance = recalculateBalance(state.initialBalance, newTransactions)
 
         return {
-          transactions: [newTransaction, ...state.transactions],
-          balance: round(newBalance),
+          transactions: newTransactions,
+          balance: newBalance,
         }
+      }),
+
+      updateTransaction: (id, updates) => set((state) => {
+          const newTransactions = state.transactions.map(t => t.id === id ? { ...t, ...updates } : t)
+          const newBalance = recalculateBalance(state.initialBalance, newTransactions)
+          return {
+              transactions: newTransactions,
+              balance: newBalance
+          }
+      }),
+
+      deleteTransaction: (id) => set((state) => {
+          const newTransactions = state.transactions.filter(t => t.id !== id)
+          const newBalance = recalculateBalance(state.initialBalance, newTransactions)
+          return {
+              transactions: newTransactions,
+              balance: newBalance
+          }
       }),
 
       addDue: (due) => set((state) => {
         const { dayOfMonth, ...rest } = due
         const now = new Date()
         const dueDate = new Date(now.getFullYear(), now.getMonth(), dayOfMonth)
-        // If the day has already passed this month, technically it should probably be this month's due still for the initial setup,
-        // unless we want it to be next month. But usually users add what's due THIS month.
 
         return {
           dues: [...state.dues, {
@@ -140,12 +165,10 @@ export const useBudgetStore = create<BudgetState>()(
         if (!targetDue) return state
 
         const isMarkingPaid = !targetDue.isPaid
-        let newBalance = state.balance
         let newTransactions = [...state.transactions]
 
         if (isMarkingPaid) {
-          // Marking as paid: Record external transaction and reduce balance
-          newBalance -= round(targetDue.amount)
+          // Marking as paid: Record external transaction
           newTransactions = [{
             id: crypto.randomUUID(),
             label: `Paid: ${targetDue.label}`,
@@ -155,59 +178,58 @@ export const useBudgetStore = create<BudgetState>()(
             dueId: id
           }, ...newTransactions]
 
-          return {
-            balance: round(newBalance),
-            transactions: newTransactions,
-            dues: state.dues.map(d => {
-              if (d.id === id) {
-                const updatedTerm = d.currentTerm !== undefined
-                  ? d.currentTerm + 1
-                  : d.currentTerm
+          const updatedDues = state.dues.map(d => {
+            if (d.id === id) {
+              const updatedTerm = d.currentTerm !== undefined
+                ? d.currentTerm + 1
+                : d.currentTerm
 
-                const nextDueDate = getNextMonthDate(new Date(d.dueDate))
+              const nextDueDate = getNextMonthDate(new Date(d.dueDate))
 
-                return {
-                  ...d,
-                  isPaid: true,
-                  currentTerm: updatedTerm,
-                  dueDate: nextDueDate.getTime(),
-                  currentAmount: 0
-                }
+              return {
+                ...d,
+                isPaid: true,
+                currentTerm: updatedTerm,
+                dueDate: nextDueDate.getTime(),
+                currentAmount: 0
               }
-              return d
-            })
+            }
+            return d
+          })
+
+          return {
+            balance: recalculateBalance(state.initialBalance, newTransactions),
+            transactions: newTransactions,
+            dues: updatedDues
           }
         } else {
-          // Unmarking as paid (Undo): Reverse balance and remove transaction
-          // Note: In v2, unmarking paid is more complex because dueDate and currentTerm were already pushed forward.
-          // For simplicity in this refactor, we'll try to reverse it, but "pushing back" a date is tricky.
-          newBalance += targetDue.amount
+          // Unmarking as paid (Undo)
           newTransactions = newTransactions.filter(t => t.dueId !== id || t.type !== 'expense')
 
-          return {
-            balance: round(newBalance),
-            transactions: newTransactions,
-            dues: state.dues.map(d => {
-              if (d.id === id) {
-                const updatedTerm = d.currentTerm !== undefined
-                  ? Math.max(1, d.currentTerm - 1)
-                  : d.currentTerm
+          const updatedDues = state.dues.map(d => {
+            if (d.id === id) {
+              const updatedTerm = d.currentTerm !== undefined
+                ? Math.max(1, d.currentTerm - 1)
+                : d.currentTerm
 
-                const prevDueDate = new Date(d.dueDate)
-                prevDueDate.setMonth(prevDueDate.getMonth() - 1)
-                // If we were at the end of a month, moving back might also need adjustment,
-                // but usually it's safer.
+              const prevDueDate = new Date(d.dueDate)
+              prevDueDate.setMonth(prevDueDate.getMonth() - 1)
 
-                return {
-                  ...d,
-                  isPaid: false,
-                  currentTerm: updatedTerm,
-                  dueDate: prevDueDate.getTime(),
-                  currentAmount: targetDue.amount // Assume it was fully funded if it was paid
-                }
+              return {
+                ...d,
+                isPaid: false,
+                currentTerm: updatedTerm,
+                dueDate: prevDueDate.getTime(),
+                currentAmount: targetDue.amount
               }
-              return d
-            })
+            }
+            return d
+          })
+
+          return {
+            balance: recalculateBalance(state.initialBalance, newTransactions),
+            transactions: newTransactions,
+            dues: updatedDues
           }
         }
       }),
@@ -242,8 +264,6 @@ export const useBudgetStore = create<BudgetState>()(
           set({
             lastResetMonth: currentMonth,
             dues: dues.map(d => {
-              // If it's a new month, any due that was "Paid" (and thus pushed to this month)
-              // should now be "Unpaid" for this month.
               return { ...d, isPaid: false }
             })
           })
@@ -259,10 +279,13 @@ export const useBudgetStore = create<BudgetState>()(
         lastResetMonth: new Date().getMonth()
       }),
 
-      importData: (data) => set((state) => ({
-        ...state,
-        ...data,
-      })),
+      importData: (data) => set((state) => {
+          const newState = { ...state, ...data }
+          return {
+              ...newState,
+              balance: recalculateBalance(newState.initialBalance || 0, newState.transactions || [])
+          }
+      }),
     }),
     {
       name: 'budget-store',

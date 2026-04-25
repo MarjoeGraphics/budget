@@ -19,7 +19,7 @@ const BottomNavbar: React.FC = () => {
   ] as const
 
   return (
-    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-[#0A0A0B]/80 backdrop-blur-xl border-t border-white/10 px-8 py-5 flex justify-between items-center z-40 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-[#0A0A0B]/95 backdrop-blur-md border-t border-white/5 px-8 py-6 flex justify-between items-center z-40">
       {tabs.map((tab) => {
         const Icon = tab.icon
         const isActive = activeTab === tab.id
@@ -29,21 +29,21 @@ const BottomNavbar: React.FC = () => {
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              "flex flex-col items-center gap-1.5 transition-all duration-300 active:scale-90",
+              "flex flex-col items-center gap-2 transition-all duration-300 active:scale-90",
               isActive
-                ? "text-blue-400"
-                : "text-gray-600 hover:text-gray-400"
+                ? "text-white"
+                : "text-gray-700 hover:text-gray-500"
             )}
           >
             <div className={cn(
-                "p-2.5 rounded-sm transition-all duration-300",
-                isActive ? "bg-blue-500/10 shadow-[0_0_20px_rgba(59,130,246,0.1)] border border-blue-500/20" : "border border-transparent"
+                "p-2 transition-all duration-300",
+                isActive ? "shadow-[0_0_15px_rgba(255,255,255,0.05)]" : ""
             )}>
-                <Icon size={20} strokeWidth={isActive ? 3 : 2} />
+                <Icon size={18} strokeWidth={isActive ? 3 : 2} />
             </div>
             <span className={cn(
-                "text-[8px] font-black uppercase tracking-[0.2em] transition-all duration-300",
-                isActive ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-1"
+                "text-[7px] font-black uppercase tracking-[0.4em] transition-all duration-300",
+                isActive ? "opacity-100" : "opacity-0"
             )}>{tab.label}</span>
           </button>
         )

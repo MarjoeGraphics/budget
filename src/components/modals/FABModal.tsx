@@ -65,26 +65,26 @@ const FABModal: React.FC = () => {
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed bottom-0 w-full max-w-md bg-[#0A0A0B] border-t border-white/10 p-8 z-[70] shadow-2xl max-h-[90vh] overflow-y-auto no-scrollbar card-radius rounded-b-none"
+            className="fixed bottom-0 w-full max-w-md bg-[#0A0A0B] border-t border-white/10 p-8 z-[70] shadow-2xl max-h-[90vh] overflow-y-auto no-scrollbar rounded-t-xl"
           >
             <div className="flex justify-between items-center mb-8">
               <div>
-                <h2 className="text-lg font-black uppercase tracking-[0.2em]">Add Entry</h2>
-                <p className="text-gray-600 text-[10px] font-black uppercase tracking-widest mt-1">Transaction Ledger</p>
+                <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-500">Add Entry</h2>
+                <p className="text-gray-600 text-[8px] font-black uppercase tracking-widest mt-1">Transaction Ledger</p>
               </div>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="p-3 glass-recessed btn-radius text-gray-500 transition-transform active:scale-90"
+                className="p-2 bg-white/5 rounded-sm text-gray-600 transition-transform active:scale-90"
               >
-                <X size={20} strokeWidth={3} />
+                <X size={16} strokeWidth={3} />
               </button>
             </div>
 
             {/* Tabs */}
-            <div className="flex p-0.5 glass-recessed btn-radius mb-8">
+            <div className="flex bg-white/5 rounded-sm p-0.5 mb-8">
                <button
                  onClick={() => setActiveTab('quick')}
-                 className={`flex-1 flex items-center justify-center gap-2 py-3 btn-radius text-[9px] font-black uppercase tracking-widest transition-all ${
+                 className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-sm text-[9px] font-black uppercase tracking-widest transition-all ${
                    activeTab === 'quick' ? 'bg-white text-black shadow-md' : 'text-gray-500'
                  }`}
                >
@@ -92,7 +92,7 @@ const FABModal: React.FC = () => {
                </button>
                <button
                  onClick={() => setActiveTab('manual')}
-                 className={`flex-1 flex items-center justify-center gap-2 py-3 btn-radius text-[9px] font-black uppercase tracking-widest transition-all ${
+                 className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-sm text-[9px] font-black uppercase tracking-widest transition-all ${
                    activeTab === 'manual' ? 'bg-white text-black shadow-md' : 'text-gray-500'
                  }`}
                >
@@ -110,11 +110,11 @@ const FABModal: React.FC = () => {
                   className="grid grid-cols-2 gap-4 mb-8"
                 >
                   {presets.length === 0 ? (
-                    <div className="col-span-2 py-12 text-center glass card-radius border-dashed border-white/5">
+                    <div className="col-span-2 py-12 text-center border border-dashed border-white/5">
                       <p className="text-gray-600 font-black text-[9px] uppercase tracking-widest mb-4">No active presets</p>
                       <button
                         onClick={() => setIsModalOpen(false)}
-                        className="text-blue-400 font-black text-[9px] uppercase tracking-widest underline"
+                        className="text-blue-500 font-black text-[9px] uppercase tracking-widest underline"
                       >
                         Configure in Settings
                       </button>
@@ -124,10 +124,10 @@ const FABModal: React.FC = () => {
                       <button
                         key={preset.id}
                         onClick={() => handlePresetTap(preset)}
-                        className="glass p-5 card-radius flex flex-col items-center gap-3 transition-all active:scale-[0.98] border-white/5 hover:border-white/10"
+                        className="bg-white/5 p-5 rounded-xl flex flex-col items-center gap-3 transition-all active:scale-[0.98] border border-white/5 hover:border-white/10"
                       >
                         <div
-                          className="w-10 h-10 btn-radius flex items-center justify-center text-white shadow-lg"
+                          className="w-10 h-10 rounded-sm flex items-center justify-center text-white shadow-lg"
                           style={{ backgroundColor: preset.color, opacity: 0.8 }}
                         >
                           {preset.type === 'income' ? <Wallet size={18} /> : <CreditCard size={18} />}
@@ -152,20 +152,20 @@ const FABModal: React.FC = () => {
                   className="space-y-6 mb-8"
                 >
                   <div>
-                     <label className="block text-[9px] font-black text-gray-500 uppercase mb-2 ml-1 tracking-widest">Descriptor</label>
+                     <label className="block text-[8px] font-black text-gray-600 uppercase mb-2 ml-1 tracking-widest">Descriptor</label>
                      <input
                        type="text"
                        required
                        value={label}
                        onChange={(e) => setLabel(e.target.value)}
                        placeholder="Note..."
-                       className="w-full glass-recessed btn-radius p-4 focus:ring-1 focus:ring-blue-500 outline-none font-bold text-sm"
+                       className="w-full bg-white/5 border border-white/5 rounded-sm p-4 focus:border-blue-500/30 outline-none font-bold text-sm text-white"
                      />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                      <div>
-                        <label className="block text-[9px] font-black text-gray-500 uppercase mb-2 ml-1 tracking-widest">Amount</label>
+                        <label className="block text-[8px] font-black text-gray-600 uppercase mb-2 ml-1 tracking-widest">Amount</label>
                         <div className="relative">
                            <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-gray-600 text-[10px] tracking-widest">₱</span>
                            <input
@@ -174,16 +174,16 @@ const FABModal: React.FC = () => {
                              value={amount}
                              onChange={(e) => setAmount(e.target.value)}
                              placeholder="0.00"
-                             className="w-full glass-recessed btn-radius p-4 pl-8 focus:ring-1 focus:ring-blue-500 outline-none font-mono-currency font-bold text-sm"
+                             className="w-full bg-white/5 border border-white/5 rounded-sm p-4 pl-8 focus:border-blue-500/30 outline-none font-mono-currency font-bold text-sm text-white"
                            />
                         </div>
                      </div>
                      <div>
-                        <label className="block text-[9px] font-black text-gray-500 uppercase mb-2 ml-1 tracking-widest">Category</label>
+                        <label className="block text-[8px] font-black text-gray-600 uppercase mb-2 ml-1 tracking-widest">Category</label>
                         <select
                           value={selectedPresetId}
                           onChange={(e) => setSelectedPresetId(e.target.value)}
-                          className="w-full glass-recessed btn-radius p-4 focus:ring-1 focus:ring-blue-500 outline-none font-bold text-xs"
+                          className="w-full bg-white/5 border border-white/5 rounded-sm p-4 focus:border-blue-500/30 outline-none font-bold text-[9px] text-gray-400"
                         >
                           <option value="">UNCATEGORIZED</option>
                           {presets.map(p => (
@@ -196,7 +196,7 @@ const FABModal: React.FC = () => {
                   </div>
 
                   <div>
-                     <label className="block text-[9px] font-black text-gray-500 uppercase mb-2 ml-1 tracking-widest">Execution Date</label>
+                     <label className="block text-[8px] font-black text-gray-600 uppercase mb-2 ml-1 tracking-widest">Execution Date</label>
                      <div className="relative">
                         <Calendar size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" />
                         <input
@@ -205,14 +205,14 @@ const FABModal: React.FC = () => {
                           value={date}
                           max={new Date().toISOString().split('T')[0]}
                           onChange={(e) => setDate(e.target.value)}
-                          className="w-full glass-recessed btn-radius p-4 pl-12 focus:ring-1 focus:ring-blue-500 outline-none font-bold text-xs"
+                          className="w-full bg-white/5 border border-white/5 rounded-sm p-4 pl-12 focus:border-blue-500/30 outline-none font-bold text-[10px] text-gray-400"
                         />
                      </div>
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full py-5 bg-white text-black font-black btn-radius shadow-2xl active:scale-[0.98] transition-all uppercase tracking-[0.3em] text-[10px]"
+                    className="w-full py-5 bg-white text-black font-black rounded-sm shadow-2xl active:scale-[0.98] transition-all uppercase tracking-[0.3em] text-[10px]"
                   >
                     Authorize Entry
                   </button>
@@ -222,7 +222,7 @@ const FABModal: React.FC = () => {
 
             <button
               onClick={() => setIsModalOpen(false)}
-              className="w-full py-4 glass-recessed text-gray-500 font-black btn-radius transition-transform active:scale-[0.98] uppercase text-[9px] tracking-[0.4em]"
+              className="w-full py-4 bg-white/5 text-gray-700 font-black rounded-sm transition-transform active:scale-[0.98] uppercase text-[9px] tracking-[0.4em]"
             >
               Abort
             </button>
