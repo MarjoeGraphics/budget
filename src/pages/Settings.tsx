@@ -1,14 +1,15 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useAppStore } from '../store/useAppStore'
-import { useBudgetStore } from '../store/useBudgetStore'
-import { Moon, Sun, Plus, Trash2, Download, Upload, Trash, Info } from 'lucide-react'
+import { useBudgetStore, type Preset } from '../store/useBudgetStore'
+import { Moon, Sun, Plus, Trash2, Download, Upload, Trash, Info, Edit3, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const Settings: React.FC = () => {
   const { theme, toggleTheme } = useAppStore()
-  const { presets, addPreset, deletePreset, clearAllData, importData, initialBalance, setInitialBalance } = useBudgetStore()
+  const { presets, addPreset, updatePreset, deletePreset, clearAllData, importData, initialBalance, setInitialBalance } = useBudgetStore()
 
   const [isAddingPreset, setIsAddingPreset] = useState(false)
+  const [editingPreset, setEditingPreset] = useState<Preset | null>(null)
   const [newPreset, setNewPreset] = useState({ label: '', amount: '', type: 'expense' as 'income' | 'expense', color: '#3b82f6' })
 
   const [isConfirmingClear, setIsConfirmingClear] = useState(false)
@@ -221,9 +222,14 @@ const Settings: React.FC = () => {
                       </p>
                     </div>
                   </div>
-                  <button onClick={() => deletePreset(p.id)} className="p-2 text-gray-300 dark:text-gray-800 hover:text-red-500 transition-colors">
-                    <Trash2 size={14} />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setEditingPreset(p)} className="p-2 text-gray-300 dark:text-gray-800 hover:text-blue-500 transition-colors">
+                      <Edit3 size={14} />
+                    </button>
+                    <button onClick={() => deletePreset(p.id)} className="p-2 text-gray-300 dark:text-gray-800 hover:text-red-500 transition-colors">
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
               ))
             )}
@@ -307,8 +313,130 @@ const Settings: React.FC = () => {
           </div>
         )}
       </AnimatePresence>
+
+      <EditPresetModal
+        preset={editingPreset}
+        onClose={() => setEditingPreset(null)}
+        onSave={(id, updates) => {
+            updatePreset(id, updates)
+            setEditingPreset(null)
+        }}
+        colors={colors}
+      />
     </div>
   )
+}
+
+const EditPresetModal: React.FC<{
+    preset: Preset | null,
+    onClose: () => void,
+    onSave: (id: string, updates: Partial<Preset>) => void,
+    colors: { name: string, value: string }[]
+}> = ({ preset, onClose, onSave, colors }) => {
+    const [label, setLabel] = useState('')
+    const [amount, setAmount] = useState('')
+    const [type, setType] = useState<'income' | 'expense'>('expense')
+    const [color, setColor] = useState('#3b82f6')
+
+    useEffect(() => {
+        if (preset) {
+            setLabel(preset.label)
+            setAmount(preset.amount.toString())
+            setType(preset.type as 'income' | 'expense')
+            setColor(preset.color)
+        }
+    }, [preset])
+
+    if (!preset) return null
+
+    return (
+        <AnimatePresence>
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={onClose}
+                className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100]"
+            />
+            <motion.div
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white dark:bg-[#0A0A0B] border-t border-gray-100 dark:border-white/10 p-8 z-[110] shadow-2xl rounded-t-xl"
+            >
+                <div className="flex justify-between items-center mb-8">
+                    <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-500">Edit Preset</h2>
+                    <button onClick={onClose} className="p-2 bg-gray-100 dark:bg-white/5 rounded-sm text-gray-500">
+                        <X size={16} strokeWidth={3} />
+                    </button>
+                </div>
+
+                <div className="space-y-8">
+                    <div className="flex bg-gray-200 dark:bg-white/5 rounded-sm p-0.5">
+                        <button
+                            onClick={() => setType('expense')}
+                            className={`flex-1 py-3 rounded-sm text-[8px] font-black uppercase tracking-widest transition-all ${
+                                type === 'expense' ? 'bg-gray-900 dark:bg-white text-white dark:text-black' : 'text-gray-500'
+                            }`}
+                        >
+                            Debit
+                        </button>
+                        <button
+                            onClick={() => setType('income')}
+                            className={`flex-1 py-3 rounded-sm text-[8px] font-black uppercase tracking-widest transition-all ${
+                                type === 'income' ? 'bg-gray-900 dark:bg-white text-white dark:text-black' : 'text-gray-500'
+                            }`}
+                        >
+                            Credit
+                        </button>
+                    </div>
+
+                    <div className="space-y-4">
+                        <input
+                            type="text"
+                            value={label}
+                            onChange={(e) => setLabel(e.target.value)}
+                            placeholder="Label..."
+                            className="w-full bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5 rounded-sm p-4 outline-none font-bold text-sm text-gray-900 dark:text-white focus:border-blue-500/30 transition-colors"
+                        />
+                        <input
+                            type="number"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                            placeholder="Amount..."
+                            className="w-full bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5 rounded-sm p-4 outline-none font-mono-currency font-bold text-sm text-gray-900 dark:text-white focus:border-blue-500/30 transition-colors"
+                        />
+                    </div>
+
+                    <div className="flex flex-wrap gap-3 justify-center">
+                        {colors.map((c) => (
+                            <button
+                                key={c.value}
+                                onClick={() => setColor(c.value)}
+                                className={`w-8 h-8 rounded-full border-2 transition-all ${
+                                    color === c.value ? 'border-gray-900 dark:border-white scale-110' : 'border-transparent opacity-40'
+                                }`}
+                                style={{ backgroundColor: c.value }}
+                            />
+                        ))}
+                    </div>
+
+                    <div className="flex gap-4">
+                        <button
+                            onClick={() => onSave(preset.id, { label, amount: parseFloat(amount), type, color })}
+                            className="flex-1 py-4 bg-gray-900 dark:bg-white text-white dark:text-black font-black rounded-sm text-[9px] uppercase tracking-[0.3em] shadow-xl"
+                        >
+                            Commit Sync
+                        </button>
+                        <button onClick={onClose} className="px-6 py-4 bg-gray-100 dark:bg-white/5 text-gray-500 rounded-sm font-black text-[9px] uppercase tracking-[0.3em]">
+                            Abort
+                        </button>
+                    </div>
+                </div>
+            </motion.div>
+        </AnimatePresence>
+    )
 }
 
 export default Settings

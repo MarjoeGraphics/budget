@@ -20,8 +20,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   }, [theme])
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-[#050505] flex justify-center selection:bg-blue-500/30">
-      <div className="w-full max-w-md bg-white dark:bg-[#0A0A0B] min-h-screen shadow-2xl relative flex flex-col border-x border-gray-200 dark:border-white/5">
+    <div className="min-h-screen bg-gray-100 dark:bg-slate-950 flex justify-center selection:bg-blue-500/30">
+      <div className="w-full max-w-md bg-white dark:bg-brand-bg min-h-screen shadow-2xl relative flex flex-col border-x border-gray-200 dark:border-white/5">
         <main className="flex-1 pb-40">
           {children}
         </main>

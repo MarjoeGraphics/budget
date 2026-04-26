@@ -52,6 +52,7 @@ interface BudgetState {
   updateDue: (id: string, updates: Partial<Due>) => void
 
   addPreset: (preset: Omit<Preset, 'id'>) => void
+  updatePreset: (id: string, updates: Partial<Preset>) => void
   deletePreset: (id: string) => void
 
   checkAndResetMonthlyDues: () => void
@@ -85,6 +86,12 @@ const recalculateBalance = (initialBalance: number, transactions: Transaction[])
     }, round(initialBalance))
 }
 
+const defaultPresets: Preset[] = [
+    { id: 'preset-food', label: 'Food', amount: 0, type: 'expense', color: '#ef4444' },
+    { id: 'preset-utilities', label: 'Utilities', amount: 0, type: 'expense', color: '#3b82f6' },
+    { id: 'preset-gas', label: 'Gas', amount: 0, type: 'expense', color: '#f97316' },
+]
+
 export const useBudgetStore = create<BudgetState>()(
   persist(
     (set, get) => ({
@@ -92,7 +99,7 @@ export const useBudgetStore = create<BudgetState>()(
       initialBalance: 0,
       transactions: [],
       dues: [],
-      presets: [],
+      presets: defaultPresets,
       lastResetMonth: new Date().getMonth(),
 
       setBalance: (amount) => set({ balance: amount }),
@@ -251,6 +258,10 @@ export const useBudgetStore = create<BudgetState>()(
         presets: [...state.presets, { ...preset, id: crypto.randomUUID() }]
       })),
 
+      updatePreset: (id, updates) => set((state) => ({
+        presets: state.presets.map(p => p.id === id ? { ...p, ...updates } : p)
+      })),
+
       deletePreset: (id) => set((state) => ({
         presets: state.presets.filter(p => p.id !== id)
       })),
@@ -275,7 +286,7 @@ export const useBudgetStore = create<BudgetState>()(
         initialBalance: 0,
         transactions: [],
         dues: [],
-        presets: [],
+        presets: defaultPresets,
         lastResetMonth: new Date().getMonth()
       }),
 
