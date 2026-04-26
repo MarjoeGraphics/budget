@@ -19,14 +19,14 @@ const Calendar: React.FC = () => {
   const monthName = today.toLocaleString('default', { month: 'long' })
 
   return (
-    <div className="glass p-5 card-radius shadow-sm mb-6">
-      <div className="flex justify-between items-center mb-6 px-1">
-        <h2 className="text-sm font-black uppercase tracking-[0.2em] text-gray-200">{monthName} {currentYear}</h2>
+    <div className="mb-12">
+      <div className="flex justify-between items-center mb-8 px-1">
+        <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-500">{monthName} {currentYear}</h2>
       </div>
 
       <div className="grid grid-cols-7 gap-1 text-center">
         {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
-          <div key={`${d}-${i}`} className="text-[9px] font-black text-gray-500 uppercase pb-4 tracking-widest">{d}</div>
+          <div key={`${d}-${i}`} className="text-[8px] font-black text-gray-700 uppercase pb-4 tracking-widest">{d}</div>
         ))}
 
         {emptyDays.map(i => (
@@ -36,7 +36,6 @@ const Calendar: React.FC = () => {
         {days.map(day => {
           const isToday = day === todayDate
 
-          // Filter dues for this specific day and ensure they belong to the current month/year
           const dayDues = dues.filter(due => {
               const date = new Date(due.dueDate)
               return getDate(date) === day &&
@@ -45,23 +44,21 @@ const Calendar: React.FC = () => {
           })
 
           const allPaid = dayDues.length > 0 && dayDues.every(d => d.isPaid)
-
-          // Crunch Day: Due within 3 days and not paid
-          const isCrunchDay = dayDues.some(d => !d.isPaid && (day >= todayDate && day <= todayDate + 3))
+          const isCrunchDay = dayDues.some(d => !d.isPaid && (new Date(d.dueDate).getTime() - today.getTime() < 3 * 24 * 60 * 60 * 1000))
 
           return (
-            <div key={day} className="aspect-square flex flex-col items-center justify-center relative">
+            <div key={day} className="aspect-square flex flex-col items-center justify-center relative group">
               <div className={`
-                w-8 h-8 flex items-center justify-center btn-radius text-[10px] font-bold transition-all
-                ${isToday ? 'bg-white text-black shadow-xl scale-110' : 'text-gray-400'}
-                ${isCrunchDay && !isToday ? 'text-red-400' : ''}
+                w-8 h-8 flex items-center justify-center rounded-full text-[10px] font-black transition-all
+                ${isToday ? 'bg-white text-black scale-110 shadow-2xl' : 'text-gray-500 group-hover:text-gray-300'}
+                ${isCrunchDay && !isToday ? 'text-red-500' : ''}
               `}>
                 {day}
               </div>
 
-              <div className="absolute bottom-1 flex gap-0.5 h-1">
+              <div className="absolute bottom-1 flex gap-0.5 h-0.5">
                 {dayDues.length > 0 && (
-                  <div className={`w-1 h-1 rounded-full ${allPaid ? 'bg-blue-400' : 'bg-white/40 animate-pulse'}`} />
+                  <div className={`w-0.5 h-0.5 rounded-full ${allPaid ? 'bg-blue-500' : 'bg-red-500 animate-pulse'}`} />
                 )}
               </div>
             </div>
