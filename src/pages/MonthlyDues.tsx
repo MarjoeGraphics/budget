@@ -47,7 +47,6 @@ const MonthlyDues: React.FC = () => {
   }
 
   const now = new Date()
-  const today = now.getDate()
 
   const toggleExpand = (id: string) => {
     setExpandedId(expandedId === id ? null : id)
@@ -197,7 +196,7 @@ const MonthlyDues: React.FC = () => {
                 })
                 .map((due) => {
                 const dDate = new Date(due.dueDate)
-                const isOverdue = now.getTime() > dDate.getTime() + (24 * 60 * 60 * 1000) // 1 day grace
+                const isOverdue = now.getTime() > dDate.getTime()
                 const isCrunch = !isOverdue && (dDate.getTime() - now.getTime() < 3 * 24 * 60 * 60 * 1000)
 
                 return (
@@ -207,7 +206,6 @@ const MonthlyDues: React.FC = () => {
                     contributedAmount={waterfall[due.id] || 0}
                     isOverdue={isOverdue}
                     isCrunch={isCrunch}
-                    today={today}
                     isExpanded={expandedId === due.id}
                     onToggleExpand={() => toggleExpand(due.id)}
                     onTogglePaid={() => toggleDuePaid(due.id)}
@@ -232,7 +230,6 @@ const MonthlyDues: React.FC = () => {
                     contributedAmount={due.amount}
                     isOverdue={false}
                     isCrunch={false}
-                    today={today}
                     isExpanded={expandedId === due.id}
                     onToggleExpand={() => toggleExpand(due.id)}
                     onTogglePaid={() => toggleDuePaid(due.id)}
@@ -253,7 +250,6 @@ interface CommitmentItemProps {
   contributedAmount: number
   isOverdue: boolean
   isCrunch: boolean
-  today: number
   isExpanded: boolean
   onToggleExpand: () => void
   onTogglePaid: () => void
@@ -262,7 +258,7 @@ interface CommitmentItemProps {
 }
 
 const CommitmentItem: React.FC<CommitmentItemProps> = ({
-  due, contributedAmount, isOverdue, isCrunch, today, isExpanded,
+  due, contributedAmount, isOverdue, isCrunch, isExpanded,
   onToggleExpand, onTogglePaid, onDelete, onUpdate
 }) => {
   const [isEditing, setIsEditing] = useState(false)
@@ -283,7 +279,7 @@ const CommitmentItem: React.FC<CommitmentItemProps> = ({
   const progress = Math.min(rawProgress, 100)
 
   const dDate = new Date(due.dueDate)
-  const daysLeft = Math.max(0, dDate.getDate() - today)
+  const daysLeft = Math.max(0, Math.ceil((dDate.getTime() - new Date().getTime()) / (24 * 60 * 60 * 1000)))
   const amountRemaining = Math.max((due?.amount || 0) - contributedAmount, 0)
 
   const dailyTarget = !isFunded && amountRemaining > 0
@@ -338,7 +334,7 @@ const CommitmentItem: React.FC<CommitmentItemProps> = ({
             </div>
             <div className="flex items-center gap-2 text-[8px] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-700 mt-1">
                 {due.isPaid ? 'CYCLE SETTLED' : `TARGET: ${new Date(due.dueDate).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' }).toUpperCase()}`}
-                {isOverdue && !due.isPaid && <span className="text-red-500 flex items-center gap-0.5"><AlertCircle size={8} /> OVERDUE</span>}
+                {isOverdue && !due.isPaid && <span className="text-red-500 font-bold flex items-center gap-0.5"><AlertCircle size={8} /> OVERDUE</span>}
             </div>
           </div>
         </div>
@@ -486,7 +482,7 @@ const CommitmentItem: React.FC<CommitmentItemProps> = ({
                         <p className="text-4xl font-mono-currency font-bold tracking-tighter text-gray-900 dark:text-gray-100">
                           ₱ {Math.ceil(dailyTarget).toLocaleString()}
                         </p>
-                        <p className={`text-[8px] font-black uppercase tracking-[0.3em] ${isOverdue ? 'text-red-500' : 'opacity-40'}`}>
+                        <p className={`text-[8px] font-black uppercase tracking-[0.3em] ${isOverdue ? 'text-red-500 font-bold' : 'opacity-40'}`}>
                           {isOverdue ? 'Terminal Overdue' : `T-MINUS ${daysLeft} DAYS`}
                         </p>
                       </>

@@ -1,10 +1,12 @@
 import React, { useMemo } from 'react'
 import { useBudgetStore } from '../store/useBudgetStore'
+import { useAppStore } from '../store/useAppStore'
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, AreaChart, Area, XAxis, YAxis } from 'recharts'
 import { Activity, LayoutGrid, TrendingUp } from 'lucide-react'
 
 const Statistics: React.FC = () => {
   const { transactions, presets, dues } = useBudgetStore()
+  const { theme } = useAppStore()
 
   const currentMonthTxs = useMemo(() => {
     const now = new Date()
@@ -88,26 +90,26 @@ const Statistics: React.FC = () => {
   return (
     <div className="p-6 pb-24 max-w-md mx-auto space-y-24">
       <header className="pt-4 px-1">
-          <h1 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-500">Resource Diagnostics</h1>
-          <p className="text-3xl font-mono-currency font-bold tracking-tighter text-gray-200">Insights</p>
+          <h1 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-500 dark:text-gray-500">Resource Diagnostics</h1>
+          <p className="text-3xl font-mono-currency font-bold tracking-tighter text-gray-900 dark:text-gray-200">Insights</p>
       </header>
 
       {/* 1. Trend: Cumulative Net Flow */}
       <section className="space-y-12">
-        <div className="flex items-center gap-3 border-b border-white/5 pb-4 px-1">
-           <TrendingUp size={14} strokeWidth={3} className="text-gray-600" />
-           <h3 className="text-[9px] font-black text-gray-500 uppercase tracking-[0.3em]">Capital Flux</h3>
+        <div className="flex items-center gap-3 pb-4 px-1">
+           <TrendingUp size={14} strokeWidth={3} className="text-gray-400 dark:text-gray-600" />
+           <h3 className="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.3em]">Capital Flux</h3>
         </div>
 
         {isEmpty ? (
-          <div className="h-64 flex flex-col items-center justify-center text-gray-800 space-y-4">
+          <div className="h-64 flex flex-col items-center justify-center text-gray-300 dark:text-gray-800 space-y-4">
             <Activity size={24} strokeWidth={1} className="opacity-20" />
             <p className="text-[8px] font-black uppercase tracking-[0.5em]">No Flux Detected</p>
           </div>
         ) : (
-          <div className="h-64 w-full -ml-8">
+          <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={trendData}>
+              <AreaChart data={trendData} margin={{ left: -40, right: 10, top: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorPrimary" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor={primaryColor} stopOpacity={0.1}/>
@@ -118,7 +120,7 @@ const Statistics: React.FC = () => {
                   dataKey="day"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 7, fontWeight: 900, fill: '#374151' }}
+                  tick={{ fontSize: 7, fontWeight: 900, fill: '#6b7280' }}
                   dy={10}
                 />
                 <YAxis
@@ -127,15 +129,16 @@ const Statistics: React.FC = () => {
                 />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: '#0A0A0B',
+                    backgroundColor: theme === 'dark' ? '#0A0A0B' : '#ffffff',
                     borderRadius: '0px',
-                    border: '1px solid rgba(255,255,255,0.05)',
+                    border: theme === 'dark' ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.05)',
                     fontSize: '9px',
                     fontWeight: 'bold',
-                    fontFamily: 'monospace'
+                    fontFamily: 'monospace',
+                    color: theme === 'dark' ? '#ffffff' : '#000000'
                   }}
                   itemStyle={{ padding: '2px 0', color: '#9ca3af' }}
-                  cursor={{ stroke: 'rgba(255,255,255,0.05)', strokeWidth: 1 }}
+                  cursor={{ stroke: theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', strokeWidth: 1 }}
                   formatter={(value: number) => [`₱ ${value.toLocaleString()}`]}
                 />
                 <Area
@@ -155,13 +158,13 @@ const Statistics: React.FC = () => {
 
       {/* 2. Distribution: Allocation Density */}
       <section className="space-y-12">
-        <div className="flex items-center gap-3 border-b border-white/5 pb-4 px-1">
-           <LayoutGrid size={14} strokeWidth={3} className="text-gray-600" />
-           <h3 className="text-[9px] font-black text-gray-500 uppercase tracking-[0.3em]">Allocation Density</h3>
+        <div className="flex items-center gap-3 pb-4 px-1">
+           <LayoutGrid size={14} strokeWidth={3} className="text-gray-400 dark:text-gray-600" />
+           <h3 className="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.3em]">Allocation Density</h3>
         </div>
 
         {chartData.length === 0 ? (
-          <div className="h-64 flex flex-col items-center justify-center text-gray-800 space-y-4">
+          <div className="h-64 flex flex-col items-center justify-center text-gray-300 dark:text-gray-800 space-y-4">
             <Activity size={24} strokeWidth={1} className="opacity-20" />
             <p className="text-[8px] font-black uppercase tracking-[0.5em]">Null Distribution</p>
           </div>
@@ -185,14 +188,15 @@ const Statistics: React.FC = () => {
                 </Pie>
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: '#0A0A0B',
+                    backgroundColor: theme === 'dark' ? '#0A0A0B' : '#ffffff',
                     borderRadius: '0px',
-                    border: '1px solid rgba(255,255,255,0.05)',
+                    border: theme === 'dark' ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.05)',
                     fontSize: '9px',
                     fontWeight: 'bold',
-                    fontFamily: 'monospace'
+                    fontFamily: 'monospace',
+                    color: theme === 'dark' ? '#ffffff' : '#000000'
                   }}
-                  formatter={(value: number) => [`₱ ${value.toLocaleString()}`, 'Magnitude']}
+                  formatter={(value: number, name: string) => [`₱ ${value.toLocaleString()}`, name]}
                 />
                 <Legend
                   layout="horizontal"
@@ -201,7 +205,7 @@ const Statistics: React.FC = () => {
                   iconType="square"
                   iconSize={4}
                   formatter={(value) => (
-                    <span className="text-[7px] font-black text-gray-600 uppercase tracking-[0.2em] ml-2">
+                    <span className="text-[7px] font-black text-gray-500 dark:text-gray-600 uppercase tracking-[0.2em] ml-2">
                       {value}
                     </span>
                   )}
