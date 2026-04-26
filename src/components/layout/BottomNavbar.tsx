@@ -19,7 +19,7 @@ const BottomNavbar: React.FC = () => {
   ] as const
 
   return (
-    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-[#0A0A0B]/95 backdrop-blur-md border-t border-white/5 px-8 py-6 flex justify-between items-center z-40">
+    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white/95 dark:bg-[#0A0A0B]/95 backdrop-blur-md border-t border-gray-100 dark:border-white/5 px-8 py-6 flex justify-between items-center z-40">
       {tabs.map((tab) => {
         const Icon = tab.icon
         const isActive = activeTab === tab.id
@@ -31,13 +31,13 @@ const BottomNavbar: React.FC = () => {
             className={cn(
               "flex flex-col items-center gap-2 transition-all duration-300 active:scale-90",
               isActive
-                ? "text-white"
-                : "text-gray-700 hover:text-gray-500"
+                ? "text-gray-900 dark:text-white"
+                : "text-gray-300 dark:text-gray-700 hover:text-gray-500 dark:hover:text-gray-500"
             )}
           >
             <div className={cn(
                 "p-2 transition-all duration-300",
-                isActive ? "shadow-[0_0_15px_rgba(255,255,255,0.05)]" : ""
+                isActive ? "shadow-[0_0_15px_rgba(0,0,0,0.02)] dark:shadow-[0_0_15px_rgba(255,255,255,0.05)]" : ""
             )}>
                 <Icon size={18} strokeWidth={isActive ? 3 : 2} />
             </div>
