@@ -12,7 +12,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 body {
-  @apply bg-brand-bg text-gray-100 transition-colors duration-200 antialiased;
+  @apply bg-white dark:bg-brand-bg text-gray-900 dark:text-gray-100 transition-colors duration-200 antialiased;
   font-family: var(--font-sans);
 }
 

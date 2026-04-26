@@ -4,7 +4,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, AreaChart, A
 import { Activity, LayoutGrid, TrendingUp } from 'lucide-react'
 
 const Statistics: React.FC = () => {
-  const { transactions, presets } = useBudgetStore()
+  const { transactions, presets, dues } = useBudgetStore()
 
   const currentMonthTxs = useMemo(() => {
     const now = new Date()
@@ -46,6 +46,7 @@ const Statistics: React.FC = () => {
     const expenseTxs = currentMonthTxs.filter(t => t.type === 'expense')
     const distribution: Record<string, { value: number, color: string }> = {}
 
+    // 1. Process Transactions
     expenseTxs.forEach(t => {
       const matchingPreset = presets.find(p => p.label.toLowerCase() === t.label.toLowerCase())
       const category = matchingPreset ? matchingPreset.label : 'Other'
@@ -57,22 +58,37 @@ const Statistics: React.FC = () => {
       distribution[category].value += t.amount
     })
 
+    // 2. Sync Resources: Include Unpaid Dues as 'COMMITTED'
+    const now = new Date()
+    const currentMonth = now.getMonth()
+    const currentYear = now.getFullYear()
+
+    const unpaidDuesTotal = dues
+      .filter(d => {
+        const dueDate = new Date(d.dueDate)
+        return !d.isPaid && dueDate.getMonth() === currentMonth && dueDate.getFullYear() === currentYear
+      })
+      .reduce((acc, d) => acc + d.amount, 0)
+
+    if (unpaidDuesTotal > 0) {
+        distribution['COMMITTED'] = { value: unpaidDuesTotal, color: '#f97316' } // Sunset Orange
+    }
+
     return Object.entries(distribution).map(([name, data]) => ({
       name,
       value: data.value,
       color: data.color
     })).sort((a, b) => b.value - a.value)
-  }, [currentMonthTxs, presets])
+  }, [currentMonthTxs, presets, dues])
 
   const isEmpty = currentMonthTxs.length === 0
 
-  // Shared color from presets for the line chart (using the first income preset color as a primary)
   const primaryColor = presets.find(p => p.type === 'income')?.color || '#3b82f6'
 
   return (
-    <div className="p-6 pb-24 max-w-md mx-auto space-y-20">
-      <header className="pt-4">
-          <h1 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-500">Flow Diagnostics</h1>
+    <div className="p-6 pb-24 max-w-md mx-auto space-y-24">
+      <header className="pt-4 px-1">
+          <h1 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-500">Resource Diagnostics</h1>
           <p className="text-3xl font-mono-currency font-bold tracking-tighter text-gray-200">Insights</p>
       </header>
 
@@ -137,11 +153,11 @@ const Statistics: React.FC = () => {
         )}
       </section>
 
-      {/* 2. Distribution: Expenses Pie */}
+      {/* 2. Distribution: Allocation Density */}
       <section className="space-y-12">
         <div className="flex items-center gap-3 border-b border-white/5 pb-4 px-1">
            <LayoutGrid size={14} strokeWidth={3} className="text-gray-600" />
-           <h3 className="text-[9px] font-black text-gray-500 uppercase tracking-[0.3em]">Resource Allocation</h3>
+           <h3 className="text-[9px] font-black text-gray-500 uppercase tracking-[0.3em]">Allocation Density</h3>
         </div>
 
         {chartData.length === 0 ? (
@@ -164,7 +180,7 @@ const Statistics: React.FC = () => {
                   stroke="none"
                 >
                   {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} opacity={0.6} />
+                    <Cell key={`cell-${index}`} fill={entry.color} opacity={0.7} />
                   ))}
                 </Pie>
                 <Tooltip

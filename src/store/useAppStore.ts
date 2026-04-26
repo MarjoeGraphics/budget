@@ -20,7 +20,7 @@ export const useAppStore = create<AppState>()(
     (set, get) => ({
       activeTab: 'home',
       prevTab: 'home',
-      theme: 'light',
+      theme: 'dark', // Default to dark for the bespoke design
       isModalOpen: false,
       setActiveTab: (tab) => {
         const currentTab = get().activeTab

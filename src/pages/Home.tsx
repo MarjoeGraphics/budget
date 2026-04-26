@@ -29,7 +29,16 @@ const Home: React.FC = () => {
       .reduce((acc, d) => acc + d.amount, 0)
   }, [dues])
 
-  const safeToSpend = balance - dueLeft
+  const daysLeft = useMemo(() => {
+    const now = new Date()
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+    const currentDay = now.getDate()
+    return Math.max(1, lastDay - currentDay + 1)
+  }, [])
+
+  const netTreasury = balance - dueLeft
+  const safeToSpendDaily = netTreasury / daysLeft
+
   const externalTransactions = useMemo(() =>
     transactions
       .filter(t => !t.isInternal)
@@ -53,6 +62,13 @@ const Home: React.FC = () => {
       month: getExpenses(externalTransactions.filter(t => t.date >= startOfMonth.getTime())),
     }
   }, [externalTransactions])
+
+  // Efficiency Color
+  const efficiencyColor = useMemo(() => {
+    if (stats.today > safeToSpendDaily) return 'text-red-500'
+    if (stats.today === safeToSpendDaily) return 'text-yellow-500'
+    return 'text-emerald-500'
+  }, [stats.today, safeToSpendDaily])
 
   // Chart Logic
   const chartData = useMemo(() => {
@@ -101,16 +117,16 @@ const Home: React.FC = () => {
   }
 
   return (
-    <div className="p-6 space-y-12 max-w-md mx-auto">
+    <div className="p-6 pb-24 space-y-12 max-w-md mx-auto">
       <header className="flex justify-between items-start pt-4">
         <div className="space-y-1">
           <h1 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-500">Net Treasury</h1>
-          <p className={`text-4xl font-mono-currency font-bold tracking-tighter ${safeToSpend >= 0 ? 'text-white' : 'text-red-500'}`}>
-               ₱ {safeToSpend.toLocaleString()}
+          <p className={`text-4xl font-mono-currency font-bold tracking-tighter ${netTreasury >= 0 ? 'text-white' : 'text-red-500'}`}>
+               ₱ {netTreasury.toLocaleString()}
           </p>
           <div className="flex items-center gap-2">
                <ShieldCheck size={10} className="text-blue-500" />
-               <span className="text-[8px] font-black uppercase tracking-widest text-gray-600">Safe to Spend Projection</span>
+               <span className="text-[8px] font-black uppercase tracking-widest text-gray-600">Free Capital Reserve</span>
           </div>
         </div>
         <div className="text-right space-y-1">
@@ -119,11 +135,31 @@ const Home: React.FC = () => {
         </div>
       </header>
 
+      {/* Daily Safe to Spend Hero */}
+      <section className="bg-white/[0.03] border border-white/5 p-6 rounded-sm space-y-4">
+          <div className="flex justify-between items-center">
+              <h2 className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500">Daily Allowance</h2>
+              <div className="flex items-center gap-1">
+                <span className={`text-[8px] font-black uppercase tracking-widest ${efficiencyColor}`}>Efficiency: </span>
+                <div className={`w-1.5 h-1.5 rounded-full ${efficiencyColor.replace('text-', 'bg-')}`} />
+              </div>
+          </div>
+          <div className="flex items-baseline gap-2">
+              <p className="text-3xl font-mono-currency font-bold tracking-tighter text-gray-100">
+                ₱ {safeToSpendDaily.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              </p>
+              <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">/ Day</span>
+          </div>
+          <p className="text-[7px] font-bold text-gray-500 uppercase tracking-[0.2em]">
+            Based on {daysLeft} days remaining in cycle
+          </p>
+      </section>
+
       {/* 2. Middle: Symmetry (50/50 Grid) - Nano Minimalist */}
       <div className="grid grid-cols-2 gap-8 border-t border-white/5 pt-8">
          {/* Left: Activity Chart */}
          <section className="flex flex-col justify-between h-32">
-            <h3 className="text-[9px] font-black text-gray-600 uppercase tracking-widest mb-4">Activity (7D)</h3>
+            <h3 className="text-[9px] font-black text-gray-600 uppercase tracking-widest mb-4">Flux Profile</h3>
             <div className="flex items-end justify-between flex-1 gap-1 px-1">
               {chartData.map((day, i) => (
                 <div key={i} className="flex flex-col items-center flex-1 gap-2 h-full">
