@@ -198,8 +198,8 @@ const MonthlyDues: React.FC = () => {
                 })
                 .map((due) => {
                 const dDate = new Date(due.dueDate)
-                const isOverdue = today > dDate.getDate() && now.getMonth() >= dDate.getMonth()
-                const isCrunch = !isOverdue && (dDate.getDate() >= today && dDate.getDate() <= today + 3)
+              const isOverdue = now.getTime() > dDate.getTime()
+              const isCrunch = !isOverdue && (dDate.getTime() - now.getTime() < 3 * 24 * 60 * 60 * 1000)
 
                 return (
                     <CommitmentItem
@@ -423,7 +423,7 @@ const CommitmentItem: React.FC<CommitmentItemProps> = ({
                       </div>
                       <div className="flex items-center gap-3 text-[9px] font-black uppercase tracking-[0.3em] text-blue-500">
                         <Layers size={12} strokeWidth={3} />
-                        {due.totalTerms ? `Cycle: ${due.currentTerm} / ${due.totalTerms}` : 'PERPETUAL'}
+                {due.totalTerms ? `Cycle: ${due.currentTerm} / ${due.totalTerms}` : 'MONTHLY RECURRING'}
                       </div>
                     </div>
                     <div className="flex gap-2">
@@ -471,7 +471,7 @@ const CommitmentItem: React.FC<CommitmentItemProps> = ({
                     {due.isPaid ? (
                       <div className="flex items-center gap-3">
                         <CheckCircle2 size={16} strokeWidth={3} />
-                        <p className="text-[9px] font-black uppercase tracking-[0.4em]">Projection Settled</p>
+                        <p className="text-[9px] font-black uppercase tracking-[0.4em]">Cycle Settled</p>
                       </div>
                     ) : isFunded ? (
                       <button

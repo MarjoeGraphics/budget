@@ -30,7 +30,11 @@ const Home: React.FC = () => {
   }, [dues])
 
   const safeToSpend = balance - dueLeft
-  const externalTransactions = useMemo(() => transactions.filter(t => !t.isInternal), [transactions])
+  const externalTransactions = useMemo(() =>
+    transactions
+      .filter(t => !t.isInternal)
+      .sort((a, b) => b.date - a.date),
+  [transactions])
 
   // Stats Calculations
   const stats = useMemo(() => {
@@ -189,11 +193,11 @@ const Home: React.FC = () => {
                   <p className="text-[8px] font-black text-gray-600 uppercase tracking-[0.5em]">{date}</p>
                 </div>
                 <div className="space-y-1">
-                  {txs.map((t) => (
+                  {txs.map((t, index) => (
                     <div
                       key={t.id}
                       onClick={() => handleEditClick(t)}
-                      className={`flex items-center justify-between py-4 px-2 group cursor-pointer hover:bg-white/[0.02] transition-colors border-b border-white/5 last:border-0`}
+                      className={`flex items-center justify-between py-4 px-2 group cursor-pointer hover:bg-white/[0.05] transition-colors border-b border-white/5 last:border-0 ${index % 2 !== 0 ? 'bg-white/[0.02]' : ''}`}
                     >
                       <div className="flex items-center gap-4">
                         <div className={`w-1 h-1 rounded-full ${t.type === 'income' ? 'bg-blue-500' : 'bg-white/20'}`} />

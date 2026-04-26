@@ -271,7 +271,7 @@ const Settings: React.FC = () => {
               </p>
               <div className="pt-4 border-t border-white/5 flex justify-between items-center">
                  <p className="text-[8px] font-black uppercase tracking-[0.3em] text-gray-700">Protocol Version</p>
-                 <p className="text-[10px] font-mono-currency font-bold text-gray-400">2.0.2</p>
+                 <p className="text-[10px] font-mono-currency font-bold text-gray-400">2.0.0</p>
               </div>
         </section>
       </div>

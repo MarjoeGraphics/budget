@@ -44,7 +44,7 @@ const Calendar: React.FC = () => {
           })
 
           const allPaid = dayDues.length > 0 && dayDues.every(d => d.isPaid)
-          const isCrunchDay = dayDues.some(d => !d.isPaid && (day >= todayDate && day <= todayDate + 3))
+          const isCrunchDay = dayDues.some(d => !d.isPaid && (new Date(d.dueDate).getTime() - today.getTime() < 3 * 24 * 60 * 60 * 1000))
 
           return (
             <div key={day} className="aspect-square flex flex-col items-center justify-center relative group">
